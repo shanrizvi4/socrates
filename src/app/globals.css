@@ -1,0 +1,131 @@
+/* src/app/globals.css */
+
+/* 1. Global Reset & Fonts */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #58604B; /* Olive Green Background */
+  color: #DECDB3;           /* Beige Text */
+  font-family: 'Charter', 'Bitstream Charter', 'Sitka Text', 'Cambria', serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* 2. The Main Graph Container */
+.graph-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5rem 2rem; /* Top/Bottom padding, Left/Right padding */
+  width: 100%;
+  min-height: 100vh;
+}
+
+.graph-rows-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem; /* Space between rows */
+  width: 100%;
+}
+
+/* Update the animation rule in .graph-row */
+.graph-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  
+  /* Start invisible, then run the 'slideDownFade' animation */
+  opacity: 0;
+  animation: slideDownFade 1.0s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Replace the old @keyframes fadeIn with this NEW Keyframe */
+@keyframes slideDownFade {
+  from { 
+    opacity: 0; 
+    /* Start 30px HIGHER (closer to the parent row) */
+    transform: translateY(-30px); 
+  }
+  to { 
+    opacity: 1; 
+    /* Settle into natural position */
+    transform: translateY(0); 
+  }
+}
+/* 3. The Node Card (Base Styles) */
+.node-card {
+  position: relative;
+  width: 16rem;  /* 256px */
+  height: 8rem;  /* 128px */
+  
+  /* Flexbox for centering text */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  
+  /* Visuals */
+  background-color: #DECDB3;
+  color: #58604B;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  /* Smooth Transitions for hover/active states */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Typography inside Card */
+.node-card h3 {
+  font-size: 1.2rem; /* 18px */
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  pointer-events: none;
+}
+
+.node-card p {
+  font-size: 0.85rem; /* 12px */
+  font-weight: 500;
+  opacity: 0.9;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* 4. Card States */
+
+/* Active State (Selected) */
+.node-card.active {
+  transform: scale(1.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 10;
+  opacity: 1;
+}
+
+/* Sibling Active State (Backgrounded) */
+.node-card.sibling-active {
+  transform: scale(0.95);
+  opacity: 0.5;
+  filter: grayscale(0.2);
+}
+
+/* Hovering over a backgrounded card brings it back */
+.node-card.sibling-active:hover {
+  transform: scale(1.05);
+  opacity: 1;
+  filter: grayscale(0);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Neutral Hover (No selection yet) */
+.node-card.neutral:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}

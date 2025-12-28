@@ -1,0 +1,329 @@
+{
+  "version": "2.0",
+  "meta": {
+    "description": "Static Bedrock Taxonomy for Knowledge Graph App",
+    "layer_count": 2,
+    "roots": 3,
+    "children_per_root": 5
+  },
+  "roots": [
+    {
+      "id": "root_nature",
+      "title": "The Natural World",
+      "hook": "Everything that exists in physical reality independent of us.",
+      "is_static": true,
+      "popup_data": {
+        "description": "This is the universe as it was before humans arrived and as it will be after we are gone. It covers the laws of physics, the scale of the cosmos, and the biological machinery of life itself.",
+        "questions": [
+          "How does complex order (like life) naturally emerge from a universe governed by entropy?",
+          "Why are the laws of physics identical here and billions of lightyears away?",
+          "What prevents the fundamental forces (like gravity) from being chaotic?"
+        ]
+      },
+      "children": [
+        {
+          "id": "nat_cosmos",
+          "title": "The Cosmos",
+          "hook": "Stars, black holes, and the scale of the universe.",
+          "is_static": true,
+          "popup_data": {
+            "description": "A journey from the Big Bang to the Heat Death. This node explores the massive structures of space, the life cycles of stars, and the mysteries of dark matter.",
+            "questions": [
+              "How do we measure the distance to a star without a physical ruler?",
+              "How does the death of a star create the elements found in our bodies?",
+              "What evidence proves the universe is expanding rather than static?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on astronomy, cosmology, and astrophysics. Topics include celestial bodies (stars, planets, galaxies), space-time, and the origin/fate of the universe.",
+            "exclude": "Do NOT include Earth's specific geology (goes to Planet Earth) or abstract geometry (goes to Ideas)."
+          }
+        },
+        {
+          "id": "nat_forces",
+          "title": "Forces & Matter",
+          "hook": "The invisible laws of Physics and the elements of Chemistry.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The rulebook of reality. From the subatomic particles that make up atoms to the fundamental forces like Gravity and Electromagnetism that hold them together.",
+            "questions": [
+              "Why does the Second Law of Thermodynamics force time to move in only one direction?",
+              "How does the Higgs Field give mass to particles that should be massless?",
+              "Why is Gravity so much weaker than Magnetism on the atomic scale?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on fundamental physics and chemistry. Includes atoms, elements, quantum mechanics, thermodynamics, and forces (gravity, magnetism).",
+            "exclude": "Do NOT include biological processes (goes to Biology) or industrial chemical engineering (goes to Tools & Tech)."
+          }
+        },
+        {
+          "id": "nat_earth",
+          "title": "Planet Earth",
+          "hook": "Geology, oceans, atmosphere, and weather systems.",
+          "is_static": true,
+          "popup_data": {
+            "description": "Our home as a physical object. This covers the shifting tectonic plates, the deep oceans, the changing climate, and the rock beneath our feet.",
+            "questions": [
+              "How does the Carbon Cycle act as a thermostat to keep Earth habitable?",
+              "How have moving tectonic plates actively directed the evolution of species?",
+              "Why does Earth have a magnetic shield while Mars does not?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Earth science: Geology, Meteorology, Oceanography, and Physical Geography (mountains, rivers).",
+            "exclude": "Do NOT include political borders, countries, or maps of nations (goes to Society & Power)."
+          }
+        },
+        {
+          "id": "nat_biology",
+          "title": "Life & Biology",
+          "hook": "The machinery of life: DNA, cells, and evolution.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The hardware of existence. How dead molecules organized themselves into living cells, how genetics passes information, and how evolution sculpts organisms.",
+            "questions": [
+              "How does DNA encode complex instructions using only four chemical letters?",
+              "Why did the evolution of Mitochondria allow life to become complex?",
+              "How does a single cell know when to stop dividing to form a specific organ?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on the biological processes common to life. Genetics, Evolution, Cell Biology, Anatomy, and Neuroscience (as an organ).",
+            "exclude": "Do NOT include specific animal behaviors (Living Kingdoms) or psychology/mental health (Culture & Self)."
+          }
+        },
+        {
+          "id": "nat_kingdoms",
+          "title": "The Living Kingdoms",
+          "hook": "The diversity of animals, plants, fungi, and microbes.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The cast of characters on Earth. From the microscopic wars of bacteria to the intelligence of octopuses and the silent networks of forests.",
+            "questions": [
+              "How does Co-evolution force two species (like bees and flowers) to shape each other?",
+              "What biological mechanism allows fungi networks to share nutrients between trees?",
+              "Why do unrelated species (like sharks and dolphins) evolve the exact same shapes?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on specific organisms and ecosystems. Zoology (animals), Botany (plants), Mycology (fungi), and Ecology.",
+            "exclude": "Do NOT include human agriculture (Tools & Tech) or human pets as cultural objects (Culture & Self)."
+          }
+        }
+      ]
+    },
+    {
+      "id": "root_civ",
+      "title": "Human Civilization",
+      "hook": "Everything created by, done by, or directly involving humans.",
+      "is_static": true,
+      "popup_data": {
+        "description": "The story of the one species that reshaped the planet. This covers our history, the tools we built, the societies we organized, and the art we created to express ourselves.",
+        "questions": [
+          "Why did the transition from Foraging to Farming initially shorten human lifespans?",
+          "Is the 'State' the only thing preventing human society from collapsing into violence?",
+          "How does the ability to store energy define the progress of a civilization?"
+        ]
+      },
+      "children": [
+        {
+          "id": "civ_society",
+          "title": "Society & Power",
+          "hook": "How we rule, trade, fight, and judge each other.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The systems we use to organize millions of strangers. This covers Government, War, Economics, and the imaginary lines we draw on maps called 'Borders'.",
+            "questions": [
+              "Why do resource-rich nations often fail economically ('The Resource Curse')?",
+              "How does 'Fiat Money' retain value if it isn't backed by gold?",
+              "Does geography determine a nation's success more than its ideology?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on collective human organization. Politics, Economics, Law, Military Strategy/History, and Political Geography (Nations/Borders).",
+            "exclude": "Do NOT include physical geography (Planet Earth) or individual self-help/productivity (Culture & Self)."
+          }
+        },
+        {
+          "id": "civ_tech",
+          "title": "Tools & Technology",
+          "hook": "Inventions that overcome our physical limits.",
+          "is_static": true,
+          "popup_data": {
+            "description": "Humans are the only animal that outsources evolution to hardware. From stone axes to Artificial Intelligence, this is the study of the things we build.",
+            "questions": [
+              "How did the invention of the Printing Press fundamentally break the power of the Church?",
+              "What is a 'General Purpose Technology' and why are they so rare?",
+              "How did the Haber-Bosch process (artificial fertilizer) allow the human population to explode?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on practical inventions and engineering. Computing, AI, Medicine (surgery/drugs), Architecture, Agriculture, and Manufacturing.",
+            "exclude": "Do NOT include pure scientific theory (Natural World) or the sociology of the internet (Society)."
+          }
+        },
+        {
+          "id": "civ_culture",
+          "title": "Culture, Self & Daily Life",
+          "hook": "The arts, food, habits, and stories that define us.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The subjective human experience. This is where we put everything about 'being human': the art we make, the food we eat, the languages we speak, and how we improve our own minds and bodies.",
+            "questions": [
+              "How did the concept of 'The Individual' emerge from collective history?",
+              "Does the language you speak limit the concepts you can understand?",
+              "What evolutionary function does Art serve in human survival?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on expression, lifestyle, and the self. Art, Music, Literature, Language/Linguistics (as communication), Food, Sports, Fitness, Mental Health, and Hobbies.",
+            "exclude": "Do NOT include biological anatomy (Biology) or formal logic/code (Ideas)."
+          }
+        },
+        {
+          "id": "civ_beliefs",
+          "title": "Beliefs & Meaning",
+          "hook": "Religions and philosophies that guide our souls.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The search for 'Why'. Science explains *how* things happen; this node explains *why* we think they happen. It covers the gods we worship and the ethical frameworks we debate.",
+            "questions": [
+              "Why did multiple major religions emerge simultaneously during the 'Axial Age'?",
+              "Can a society maintain an ethical code without a supernatural belief system?",
+              "How do rituals create social cohesion among strangers?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on abstract human belief systems. Religion, Mythology, Philosophy (Existentialism, Ethics), and Spirituality.",
+            "exclude": "Do NOT include formal mathematical logic (Ideas) or political ideology (Society)."
+          }
+        },
+        {
+          "id": "civ_history",
+          "title": "History & Biography",
+          "hook": "The chronological record of what actually happened.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The timeline of everything. While other nodes organize by *topic*, this node organizes by *time*. It is the home of specific events, eras, and the people who shaped them.",
+            "questions": [
+              "Why did Eurasia develop steel and immunity to germs while the Americas did not?",
+              "Do 'Great Men' drive history, or are they just products of their time?",
+              "How does the 'Survivorship Bias' distort our understanding of historical events?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on chronological events and specific people. Biographies, Historical Eras (Renaissance), and specific Events (The Battle of Waterloo).",
+            "exclude": "Do NOT include general concepts like 'Democracy' (Society) unless looking for the *history* of it."
+          }
+        }
+      ]
+    },
+    {
+      "id": "root_ideas",
+      "title": "Ideas & Systems",
+      "hook": "Pure concepts, logic, and abstract truths.",
+      "is_static": true,
+      "popup_data": {
+        "description": "The realm of pure thought. These are the systems that would be true even if the physical universe disappeared: the truths of mathematics, logic, and code.",
+        "questions": [
+          "Why is Mathematics so unreasonably effective at describing the physical world?",
+          "What is the difference between a 'Complex' system and a 'Complicated' one?",
+          "How do we determine truth in a system based on unprovable axioms?"
+        ]
+      },
+      "children": [
+        {
+          "id": "idea_num",
+          "title": "Quantity & Number",
+          "hook": "Arithmetic, infinity, and the language of count.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The study of magnitude. From the concept of Zero to the madness of Infinity, this covers the raw numbers that describe reality.",
+            "questions": [
+              "Why was the invention of Zero essential for advanced mathematics?",
+              "How are Prime Numbers used to secure modern digital communication?",
+              "Why were 'Imaginary Numbers' necessary to solve real-world physics problems?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Arithmetic, Number Theory, and Algebra. Concepts like Zero, Infinity, Primes, and Constants (Pi).",
+            "exclude": "Do NOT include physics equations (Forces & Matter) or economic statistics (Society)."
+          }
+        },
+        {
+          "id": "idea_shape",
+          "title": "Shape & Space",
+          "hook": "Geometry, topology, and the dimensions of form.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The study of structure. How shapes fit together, how higher dimensions work, and the mathematical rules of space itself.",
+            "questions": [
+              "How does Non-Euclidean geometry explain the curvature of gravity?",
+              "Why do Fractal patterns appear so frequently in nature?",
+              "How does Topology distinguish between a coffee mug and a donut?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Geometry, Topology, and Trigonometry. Dimensions, fractals, and spatial reasoning.",
+            "exclude": "Do NOT include physical geography (Planet Earth) or architectural design (Culture/Tech)."
+          }
+        },
+        {
+          "id": "idea_logic",
+          "title": "Logic & Proof",
+          "hook": "The rigorous rules of truth, paradoxes, and reasoning.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The operating system of reason. How do we know something is true? This covers formal logic, paradoxes that break our brains, and the nature of proof.",
+            "questions": [
+              "What did Gödel's Incompleteness Theorem prove about the limits of math?",
+              "What is the fundamental difference between Deductive and Inductive reasoning?",
+              "How does the 'Halting Problem' prove some things are uncomputable?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Formal Logic, Set Theory, and Paradoxes. Boolean logic, fallacies, and proof systems.",
+            "exclude": "Do NOT include human philosophy or ethics (Beliefs & Meaning)."
+          }
+        },
+        {
+          "id": "idea_change",
+          "title": "Change & Motion",
+          "hook": "Calculus, dynamics, and measuring how things transform.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The mathematics of movement. Nothing stays still. Calculus allows us to freeze time and understand how things change from moment to moment.",
+            "questions": [
+              "How did Calculus solve Zeno's Paradox of motion?",
+              "Why does 'Chaos Theory' make long-term weather prediction impossible?",
+              "How do Differential Equations model the spread of a virus?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Calculus, Differential Equations, and Chaos Theory. The math of rates, limits, and dynamic systems.",
+            "exclude": "Do NOT include the physics of motion (Forces & Matter)."
+          }
+        },
+        {
+          "id": "idea_info",
+          "title": "Information & Code",
+          "hook": "Algorithms, cryptography, and computing theory.",
+          "is_static": true,
+          "popup_data": {
+            "description": "The abstract rules of data. Before a computer is built, it exists as a theoretical machine. This covers how information is stored, hidden, and processed.",
+            "questions": [
+              "What does it mean for a system to be 'Turing Complete'?",
+              "How does 'Entropy' in information theory measure the uncertainty of a message?",
+              "What is the 'P vs NP' problem and why is it the biggest question in computer science?"
+            ]
+          },
+          "llm_config": {
+            "definition": "Focus on Theoretical Computer Science, Information Theory, Cryptography, and Linguistics (structural).",
+            "exclude": "Do NOT include specific software or hardware (Tools & Tech) or the history of the internet (Society)."
+          }
+        }
+      ]
+    }
+  ]
+}
