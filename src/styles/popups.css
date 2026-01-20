@@ -1,0 +1,87 @@
+/* src/styles/popups.css */
+
+/* --- HOVER POPUP CONTAINER --- */
+.hover-card {
+  /* Position is now handled via inline styles in JS (fixed) */
+  width: 24rem; 
+  background-color: #EBE5CE;
+  color: #2A2F25;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid #58604B;
+  
+  /* CRITICAL: No transition on the container itself to avoid conflicts */
+  transition: none !important;
+  text-align: left;
+}
+
+/* --- INTERNAL ELEMENTS (Unchanged) --- */
+.hover-card__header-line {
+  width: 40px; 
+  height: 4px; 
+  background-color: #58604B; 
+  margin-bottom: 0.75rem; 
+  border-radius: 2px;
+}
+
+.hover-card__title {
+  margin: 0 0 0.5rem 0; 
+  font-family: serif; 
+  font-size: 1.4rem; 
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.hover-card__desc {
+  margin: 0 0 1rem 0; 
+  font-size: 0.85rem; 
+  line-height: 1.5; 
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+/* --- QUESTIONS SECTION --- */
+.hover-card__questions-wrapper {
+  margin-top: 0.5rem;
+  border-top: 1px solid rgba(88, 96, 75, 0.2);
+  padding-top: 0.75rem;
+}
+
+.hover-card__questions-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #58604B;
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.hover-card__questions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hover-card__question-item {
+  background-color: rgba(255, 255, 255, 0.4);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #2A2F25;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer; 
+}
+
+.hover-card__question-item:hover {
+  background-color: #FFF;
+  border-color: #58604B;
+  transform: translateX(2px);
+}

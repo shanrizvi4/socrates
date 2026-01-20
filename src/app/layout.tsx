@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "../styles/graph.css";
+import "../styles/cards.css";
+import "../styles/popups.css";
 
 export const metadata: Metadata = {
   title: "Socrates",

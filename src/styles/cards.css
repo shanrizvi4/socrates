@@ -1,0 +1,73 @@
+/* src/styles/cards.css */
+
+/* --- NODE CARD BASE --- */
+.node-card {
+  position: relative;
+  width: 16rem;
+  height: 8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  
+  /* Visuals */
+  background-color: #DECDB3;
+  color: #58604B;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  /* SAFETY FIX: Don't use 'all'. Explicitly list what animates. 
+     This prevents the browser from trying to "transition" the z-index. */
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, opacity 0.3s, filter 0.3s;
+}
+
+/* Typography */
+.node-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+  pointer-events: none;
+}
+
+.node-card p {
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.9;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* --- STATES --- */
+
+.node-card.active {
+  transform: scale(1.05);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 10;
+  opacity: 1;
+}
+
+.node-card.sibling-active {
+  transform: scale(0.95);
+  opacity: 0.5;
+  filter: grayscale(0.2);
+}
+
+/* --- Z-INDEX HELPERS --- */
+
+/* Force High Z-Index (Applied by React) */
+.node-card.z-high {
+  z-index: 999 !important;
+}
+
+/* Hover State */
+.node-card:hover {
+  transform: scale(1.05);
+  opacity: 1 !important;
+  filter: grayscale(0) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  z-index: 999 !important;
+}
