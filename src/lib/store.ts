@@ -12,30 +12,32 @@ interface StoreState {
   generateChildren: (parentNode: Node, silent?: boolean) => Promise<void>;
 }
 
+// Simple initialization: Just load the roots.
 const initializeNodes = (): NodeMap => {
   const map: NodeMap = {};
   taxonomy.roots.forEach((root) => {
     const rootChildrenIds: string[] = [];
-    root.children.forEach((child: any) => {
-      const childId = child.id;
-      const childChildrenIds: string[] = [];
-      if (child.preview_children) {
-        child.preview_children.forEach((grandChild: any, i: number) => {
-          const grandChildId = `${childId}_preview_${i}`;
-          map[grandChildId] = {
-            id: grandChildId,
-            title: grandChild.title,
-            hook: grandChild.hook,
-            is_static: false,
-            childrenIds: [], 
-          };
-          childChildrenIds.push(grandChildId);
-        });
+    
+    // Process Static Children (if any exist in JSON)
+    if (root.children) {
+      root.children.forEach((child: any) => {
+        const childId = child.id;
+        // Map static children simply
+        map[childId] = { ...child, childrenIds: [] };
+        rootChildrenIds.push(childId);
+      });
+    }
+
+    const normalizedRoot = {
+      ...root,
+      childrenIds: rootChildrenIds,
+      popup_data: root.popup_data || {
+        description: root.description || root.hook,
+        questions: root.questions || [] 
       }
-      map[childId] = { ...child, childrenIds: childChildrenIds };
-      rootChildrenIds.push(childId);
-    });
-    map[root.id] = { ...root, childrenIds: rootChildrenIds } as unknown as Node;
+    };
+
+    map[root.id] = normalizedRoot as unknown as Node;
   });
   return map;
 };
@@ -49,6 +51,7 @@ export const useGraphStore = create<StoreState>((set, get) => ({
   selectNode: async (nodeId, depth) => {
     console.log(`🖱️ CLICKED: ${nodeId} at depth ${depth}`);
     
+    // 1. Update Path UI
     set((state) => {
       const newPath = state.activePath.slice(0, depth);
       newPath.push(nodeId);
@@ -57,32 +60,16 @@ export const useGraphStore = create<StoreState>((set, get) => ({
 
     const state = get();
     const node = state.nodeMap[nodeId];
-    
-    // CASE A: Children exist (Instant Load)
-    // This happens when clicking Root nodes or nodes we visited before.
-    if (node && node.childrenIds && node.childrenIds.length > 0) {
-       console.log("✅ INSTANT LOAD. Checking for pre-fetch opportunities...");
-       
-       // --- 🌊 RESTORED: LOOK-AHEAD PREFETCH ---
-       // Even though we have the children (Layer 2), we need to check 
-       // if THOSE children have their own children (Layer 3).
-       // If not, we start fetching them silently right now.
-       const childrenToPrefetch = node.childrenIds.slice(0, 3); // Limit to 3 to save bandwidth
 
-       childrenToPrefetch.forEach(childId => {
-         const childNode = state.nodeMap[childId];
-         // Logic: If child exists, but has NO children of its own, fetch them!
-         if (childNode && (!childNode.childrenIds || childNode.childrenIds.length === 0)) {
-           console.log(`👀 LOOK-AHEAD: Prefetching for ${childNode.title}`);
-           state.generateChildren(childNode, true); 
-         }
-       });
+    // 2. Check Cache
+    if (node && node.childrenIds && node.childrenIds.length > 0) {
+       console.log("✅ CHILDREN EXIST. Skipping generation.");
        return; 
     }
 
-    // CASE B: Blocking Load (We have nothing, must wait)
+    // 3. Generate if missing
     if (node) {
-       console.log("⚡ BLOCKING LOAD: Generating for:", node.title);
+       console.log("⚡ GENERATING CHILDREN FOR:", node.title);
        await state.generateChildren(node, false);
     }
   },
@@ -90,15 +77,8 @@ export const useGraphStore = create<StoreState>((set, get) => ({
   generateChildren: async (parentNode, silent = false) => {
     const state = get();
 
-    if (state.fetchingIds.has(parentNode.id)) {
-      if (!silent) console.log(`⏳ ALREADY FETCHING: ${parentNode.title}`);
-      if (!silent) set({ isLoading: true }); 
-      return;
-    }
-
-    if ((state.nodeMap[parentNode.id]?.childrenIds?.length ?? 0) > 0) {
-      return;
-    }
+    // Prevent duplicate requests
+    if (state.fetchingIds.has(parentNode.id)) return;
 
     if (!silent) set({ isLoading: true });
     
@@ -109,7 +89,7 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     });
 
     try {
-      if (!silent) console.log(`🚀 API REQUEST START: ${parentNode.title} (Silent: ${silent})`);
+      if (!silent) console.log(`🚀 API REQUEST START: ${parentNode.title}`);
 
       const payload = {
         parentNode,
@@ -127,39 +107,23 @@ export const useGraphStore = create<StoreState>((set, get) => ({
 
       const newNodesMap: NodeMap = {};
       const parentChildrenIds: string[] = [];
-      const newChildNodes: Node[] = []; 
 
+      // Simple Mapping: Just create the children. No grandchildren logic.
       data.children.forEach((child: any, i: number) => {
         const childId = `${parentNode.id}_${i}`;
-        const childChildrenIds: string[] = [];
-
-        if (child.preview_children) {
-          child.preview_children.forEach((grandChild: any, j: number) => {
-            const grandChildId = `${childId}_preview_${j}`;
-            newNodesMap[grandChildId] = {
-              id: grandChildId,
-              title: grandChild.title,
-              hook: grandChild.hook,
-              is_static: false,
-              childrenIds: [],
-            };
-            childChildrenIds.push(grandChildId);
-          });
-        }
-
+        
         const newNode = {
           id: childId,
           title: child.title,
           hook: child.hook,
           is_static: false,
-          childrenIds: childChildrenIds,
+          childrenIds: [], // Start empty
           llm_config: child.llm_config,
-          popup_data: child.popup_data
+          popup_data: child.popup_data // Guaranteed to be full now
         };
 
         newNodesMap[childId] = newNode;
         parentChildrenIds.push(childId);
-        newChildNodes.push(newNode);
       });
 
       set((state) => ({
@@ -173,18 +137,6 @@ export const useGraphStore = create<StoreState>((set, get) => ({
         },
         isLoading: false
       }));
-      console.log(`✨ GENERATED: ${parentNode.title}`);
-
-      // --- 🌊 CASCADE PREFETCH (Deep Dive) ---
-      // If we just generated Layer X, immediately fetch Layer X+1
-      if (!silent) {
-        console.log(`🌊 CASCADE: Prefetching next layer for first 3 children...`);
-        newChildNodes.slice(0, 3).forEach((childNode) => {
-          setTimeout(() => {
-             get().generateChildren(childNode, true); 
-          }, 100);
-        });
-      }
 
     } catch (error) {
       console.error("❌ GENERATION FAILED:", error);
@@ -211,6 +163,7 @@ export const getRootNodes = () => {
      id: r.id, 
      title: r.title, 
      hook: r.hook, 
-     is_static: true 
+     is_static: true,
+     popup_data: r.popup_data 
    }));
 };

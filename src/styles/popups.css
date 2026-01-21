@@ -9,7 +9,7 @@
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-  border: 1px solid #58604B;
+  /* border: 1px solid #58604B; */
   
   /* CRITICAL: No transition on the container itself to avoid conflicts */
   transition: none !important;
@@ -31,6 +31,7 @@
   font-size: 1.4rem; 
   font-weight: 700;
   line-height: 1.1;
+  color: #58604B; 
 }
 
 .hover-card__desc {
@@ -39,6 +40,7 @@
   line-height: 1.5; 
   opacity: 0.9;
   font-weight: 400;
+  color: #58604B; 
 }
 
 /* --- QUESTIONS SECTION --- */
@@ -69,19 +71,18 @@
 }
 
 .hover-card__question-item {
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.5);
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #2A2F25;
+  color: #58604B; 
   border: 1px solid transparent;
   transition: all 0.2s;
   cursor: pointer; 
 }
 
 .hover-card__question-item:hover {
-  background-color: #FFF;
   border-color: #58604B;
   transform: translateX(2px);
 }

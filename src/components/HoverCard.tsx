@@ -1,5 +1,5 @@
 import { Node } from "@/types/graph";
-import { motion, Variants, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion"; 
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 
@@ -8,54 +8,120 @@ export type Position = 'top' | 'bottom' | 'left' | 'right';
 interface HoverCardProps {
   node: Node;
   position: Position;
-  anchorRect: DOMRect | null; // NEW: We need the exact coordinates of the parent
+  anchorRect: DOMRect | null; 
 }
 
 export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
   const description = node.popup_data?.description || node.hook;
   const questions = node.popup_data?.questions || [];
   
-  // Ensure we are on the client (Next.js SSR safety)
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   if (!mounted || !anchorRect) return null;
 
-  // Calculate Fixed Coordinates based on the parent's position on screen
-  const getStyle = () => {
-    const gap = 15; // Space between card and popup
+  // 1. Layout Logic (Top/Left calculation)
+  const getLayoutStyles = () => {
+    const gap = 15; 
+    const margin = 20; // Minimum distance from screen edge
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    // Estimated dimensions (Matches CSS + Safety buffer)
+    const EST_HEIGHT = 550; 
+    const EST_WIDTH = 450;
+
     const styles: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 99999, // Nothing stops this now
+      zIndex: 99999, 
       pointerEvents: 'auto',
+    };
+
+    // --- VERTICAL CLAMP (For Side Popups) ---
+    const getSideTop = () => {
+      let top = anchorRect.top;
+      // If bottom goes off screen, shift up
+      if (top + EST_HEIGHT > viewportHeight - margin) {
+        top = viewportHeight - EST_HEIGHT - margin;
+      }
+      // If top goes off screen, shift down
+      if (top < margin) {
+        top = margin;
+      }
+      return top;
+    };
+
+    // --- HORIZONTAL CLAMP (The Fix) ---
+    const getClampedLeft = (baseLeft: number, mode: 'center' | 'left' | 'right') => {
+      let left = baseLeft;
+
+      if (mode === 'center') {
+        // Mode: Top/Bottom (Centered)
+        const leftEdge = left - (EST_WIDTH / 2);
+        const rightEdge = left + (EST_WIDTH / 2);
+
+        if (leftEdge < margin) {
+             left += (margin - leftEdge); // Shift Right
+        } else if (rightEdge > viewportWidth - margin) {
+             left -= (rightEdge - (viewportWidth - margin)); // Shift Left
+        }
+      } 
+      else if (mode === 'left') {
+        // Mode: Left (Popup is drawn to the LEFT of this point)
+        // Visual Range: [left - Width, left]
+        const leftEdge = left - EST_WIDTH;
+        if (leftEdge < margin) {
+           // If it overflows left, force it to start at the margin
+           left = margin + EST_WIDTH; 
+        }
+      } 
+      else if (mode === 'right') {
+        // Mode: Right (Popup is drawn to the RIGHT of this point)
+        // Visual Range: [left, left + Width]
+        const rightEdge = left + EST_WIDTH;
+        if (rightEdge > viewportWidth - margin) {
+           // If it overflows right, force it to end at the margin
+           left = viewportWidth - margin - EST_WIDTH; 
+        }
+      }
+      
+      return left;
     };
 
     switch (position) {
       case 'top':
         styles.top = anchorRect.top - gap;
-        styles.left = anchorRect.left + (anchorRect.width / 2);
-        styles.transform = 'translate(-50%, -100%)';
+        // Pass center point, tell function it's centered
+        styles.left = getClampedLeft(anchorRect.left + (anchorRect.width / 2), 'center');
         break;
       case 'bottom':
         styles.top = anchorRect.bottom + gap;
-        styles.left = anchorRect.left + (anchorRect.width / 2);
-        styles.transform = 'translate(-50%, 0)';
+        styles.left = getClampedLeft(anchorRect.left + (anchorRect.width / 2), 'center');
         break;
       case 'left':
-        styles.top = anchorRect.top + (anchorRect.height / 2);
-        styles.left = anchorRect.left - gap;
-        styles.transform = 'translate(-100%, -50%)';
+        styles.top = getSideTop();
+        // Pass the anchor point, tell function it extends Left
+        styles.left = getClampedLeft(anchorRect.left - gap, 'left');
         break;
       case 'right':
-        styles.top = anchorRect.top + (anchorRect.height / 2);
-        styles.left = anchorRect.right + gap;
-        styles.transform = 'translate(0, -50%)';
+        styles.top = getSideTop();
+        // Pass the anchor point, tell function it extends Right
+        styles.left = getClampedLeft(anchorRect.right + gap, 'right');
         break;
     }
     return styles;
   };
 
-  const sidebarVariants: Variants = {
+  const getMotionValues = () => {
+    switch (position) {
+      case 'top':    return { x: "-50%", y: "-100%" };
+      case 'bottom': return { x: "-50%", y: 0 };
+      case 'left':   return { x: "-100%", y: 0 };
+      case 'right':  return { x: 0,       y: 0 };
+    }
+  };
+
+  const sidebarVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: { 
       opacity: 1, 
@@ -71,18 +137,18 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
 
   const content = (
     <motion.div 
-      className="hover-card" // Removed modifier classes (--top, etc) since we use inline styles now
+      className="hover-card" 
       variants={sidebarVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
       style={{
-        ...getStyle(),
-        transformOrigin: "center center" 
+        ...getLayoutStyles(),
+        ...getMotionValues(),
+        transformOrigin: position === 'left' || position === 'right' ? "center top" : "center center"
       }}
     >
-      <div className="hover-card__header-line" />
-      <h4 className="hover-card__title">{node.title}</h4>
+      {/* <h4 className="hover-card__title">{node.title}</h4> */}
       <p className="hover-card__desc">{description}</p>
 
       {questions.length > 0 && (
@@ -100,6 +166,5 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
     </motion.div>
   );
 
-  // TELEPORT: Render this component into the <body> tag
   return createPortal(content, document.body);
 }
