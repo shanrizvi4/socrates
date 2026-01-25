@@ -1,17 +1,118 @@
-/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* 1. Global Reset */
+/* 1. Reset */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-/* 2. Global Theme & Fonts */
-body {
-  background-color: #58604B; /* Olive Green Background */
-  color: #DECDB3;           /* Beige Text */
+/* 2. Global Defaults */
+html, body {
+  background-color: #58604B; 
+  color: #DECDB3;           
   font-family: 'Charter', 'Bitstream Charter', 'Sitka Text', 'Cambria', serif;
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  /* We let the App Root handle the constraints */
+  height: 100%;
+  width: 100%;
+}
+
+/* --- NODE CARD STYLES --- */
+.node-card {
+  width: 220px; 
+  min-width: 220px; 
+  flex-shrink: 0; 
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  
+  background-color: #58604B; 
+  border: 1px solid #DECDB3; 
+  border-radius: 8px;
+  padding: 1.5rem;
+  color: #DECDB3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.node-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+}
+
+.node-card.active {
+  background-color: #DECDB3; 
+  color: #58604B;           
+  border-color: #58604B;
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+.node-card.sibling-active:not(.active) {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.node-card h3 {
+  font-family: 'Charter', serif;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.node-card p {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+/* --- LOADING ANIMATION --- */
+.node-card.loading {
+  border-color: #7690A5 !important; 
+  box-shadow: 0 0 30px rgba(118, 144, 165, 0.8);
+  animation: blue-breath 2s infinite ease-in-out;
+  pointer-events: none; 
+}
+
+@keyframes blue-breath {
+  0% { border-color: #DECDB3; box-shadow: 0 0 0 0 rgba(118, 144, 165, 0); }
+  50% { border-color: #7690A5; box-shadow: 0 0 40px rgba(118, 144, 165, 0.9); }
+  100% { border-color: #DECDB3; box-shadow: 0 0 0 0 rgba(118, 144, 165, 0); }
+}
+
+/* --- GRAPH LAYOUT UTILS --- */
+.graph-rows-wrapper {
+  /* Use standard block flow, not shrink-wrap */
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  
+  width: 100%; /* Force full width */
+  min-height: 100%; /* Ensure it fills at least the screen */
+  
+  gap: 4rem; 
+  
+  /* Robust Padding */
+  padding-top: 5vh; 
+  padding-bottom: 400px; /* Massive bottom buffer ensures scrollability */
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.graph-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 2rem;
+  
+  /* Force single line */
+  flex-wrap: nowrap !important;
+  width: 100%; /* Allow row to take full width */
 }

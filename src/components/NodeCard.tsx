@@ -7,10 +7,11 @@ interface NodeCardProps {
   node: Node;
   isActive: boolean;
   isSiblingActive: boolean;
+  isLoading?: boolean; 
   onClick: () => void;
 }
 
-export function NodeCard({ node, isActive, isSiblingActive, onClick }: NodeCardProps) {
+export function NodeCard({ node, isActive, isSiblingActive, isLoading, onClick }: NodeCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState<Position>('top');
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
@@ -27,67 +28,31 @@ export function NodeCard({ node, isActive, isSiblingActive, onClick }: NodeCardP
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       setAnchorRect(rect); 
-
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
       
-      // Dimensions + Safety Buffer
-      const POPUP_HEIGHT = 450; 
-      const POPUP_WIDTH = 480; 
+      const viewportWidth = window.innerWidth;
+      // Matches the width of the card + some safety buffer
+      const POPUP_WIDTH = 450; 
 
       const cardCenterX = rect.left + (rect.width / 2);
-      const cardCenterY = rect.top + (rect.height / 2);
       const isRightSide = cardCenterX > (viewportWidth / 2);
 
-      // --- SMART POSITIONING LOGIC ---
-      
-      // 1. Vertical Safety Check:
-      // Side popups are centered. Do we have room for half the popup above AND below?
-      const fitsVerticallyCentered = 
-        (cardCenterY - (POPUP_HEIGHT / 2) > 0) &&           // Room above center
-        (cardCenterY + (POPUP_HEIGHT / 2) < viewportHeight); // Room below center
-
-      let bestPos: Position = 'bottom';
+      // --- SIMPLIFIED LOGIC (Restored) ---
+      // 1. Prefer Side (Left/Right) if it fits width-wise.
+      // 2. We trust HoverCard.tsx to handle vertical clamping.
+      let bestPos: Position = 'bottom'; 
 
       if (isRightSide) {
-        // PREFERENCE: LEFT
-        const fitsLeft = rect.left > POPUP_WIDTH;
-        
-        if (fitsLeft && fitsVerticallyCentered) {
-          bestPos = 'left';
-        } else {
-          // Fallback: Compare space Top vs Bottom
-          const spaceTop = rect.top;
-          const spaceBottom = viewportHeight - rect.bottom;
-          // If we have more room on top (e.g. card is at bottom), go TOP.
-          bestPos = spaceTop > spaceBottom ? 'top' : 'bottom';
-        }
+        // Card on Right -> Try Left
+        if (rect.left > POPUP_WIDTH) bestPos = 'left';
+        else bestPos = 'bottom'; 
       } else {
-        // PREFERENCE: RIGHT
-        const fitsRight = (viewportWidth - rect.right) > POPUP_WIDTH;
-        
-        if (fitsRight && fitsVerticallyCentered) {
-          bestPos = 'right';
-        } else {
-          // Fallback: Compare space Top vs Bottom
-          const spaceTop = rect.top;
-          const spaceBottom = viewportHeight - rect.bottom;
-          bestPos = spaceTop > spaceBottom ? 'top' : 'bottom';
-        }
-      }
-      
-      // Final Safety: If we chose 'bottom' but there's no room, force 'top'
-      if (bestPos === 'bottom' && (viewportHeight - rect.bottom < POPUP_HEIGHT)) {
-         bestPos = 'top';
-      }
-      // Final Safety: If we chose 'top' but there's no room, force 'bottom'
-      if (bestPos === 'top' && (rect.top < POPUP_HEIGHT)) {
-         bestPos = 'bottom';
+        // Card on Left -> Try Right
+        if ((viewportWidth - rect.right) > POPUP_WIDTH) bestPos = 'right';
+        else bestPos = 'bottom';
       }
 
       setPosition(bestPos);
     }
-    
     setIsHovered(true);
   };
 
@@ -97,15 +62,17 @@ export function NodeCard({ node, isActive, isSiblingActive, onClick }: NodeCardP
     }, 100);
   };
 
-  let stateClass = "neutral";
-  if (isActive) stateClass = "active";
-  else if (isSiblingActive) stateClass = "sibling-active";
+  // Base classes
+  const classes = ["node-card"];
+  if (isActive) classes.push("active");
+  else if (isSiblingActive) classes.push("sibling-active");
+  if (isLoading) classes.push("loading");
 
   return (
     <div 
       ref={cardRef}
-      className={`node-card ${stateClass}`} 
-      onClick={onClick}
+      className={classes.join(" ")} 
+      onClick={onClick} 
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -115,7 +82,7 @@ export function NodeCard({ node, isActive, isSiblingActive, onClick }: NodeCardP
       </div>
 
       <AnimatePresence>
-        {isHovered && anchorRect && (
+        {isHovered && anchorRect && !isLoading && (
           <HoverCard 
             key="hover-popup" 
             node={node} 

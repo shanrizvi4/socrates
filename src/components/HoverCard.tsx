@@ -2,6 +2,8 @@ import { Node } from "@/types/graph";
 import { motion } from "framer-motion"; 
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
+import { useGraphStore } from "@/lib/store";
+import "../styles/popups.css";
 
 export type Position = 'top' | 'bottom' | 'left' | 'right';
 
@@ -12,6 +14,7 @@ interface HoverCardProps {
 }
 
 export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
+  const { triggerChat } = useGraphStore(); 
   const description = node.popup_data?.description || node.hook;
   const questions = node.popup_data?.questions || [];
   
@@ -20,16 +23,12 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
 
   if (!mounted || !anchorRect) return null;
 
-  // 1. Layout Logic (Top/Left calculation)
+  // --- LAYOUT LOGIC ---
   const getLayoutStyles = () => {
     const gap = 15; 
-    const margin = 20; // Minimum distance from screen edge
+    const margin = 20; 
     const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-    
-    // Estimated dimensions (Matches CSS + Safety buffer)
     const EST_HEIGHT = 550; 
-    const EST_WIDTH = 450;
 
     const styles: React.CSSProperties = {
       position: 'fixed',
@@ -37,76 +36,33 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
       pointerEvents: 'auto',
     };
 
-    // --- VERTICAL CLAMP (For Side Popups) ---
     const getSideTop = () => {
       let top = anchorRect.top;
-      // If bottom goes off screen, shift up
       if (top + EST_HEIGHT > viewportHeight - margin) {
         top = viewportHeight - EST_HEIGHT - margin;
       }
-      // If top goes off screen, shift down
       if (top < margin) {
         top = margin;
       }
       return top;
     };
 
-    // --- HORIZONTAL CLAMP (The Fix) ---
-    const getClampedLeft = (baseLeft: number, mode: 'center' | 'left' | 'right') => {
-      let left = baseLeft;
-
-      if (mode === 'center') {
-        // Mode: Top/Bottom (Centered)
-        const leftEdge = left - (EST_WIDTH / 2);
-        const rightEdge = left + (EST_WIDTH / 2);
-
-        if (leftEdge < margin) {
-             left += (margin - leftEdge); // Shift Right
-        } else if (rightEdge > viewportWidth - margin) {
-             left -= (rightEdge - (viewportWidth - margin)); // Shift Left
-        }
-      } 
-      else if (mode === 'left') {
-        // Mode: Left (Popup is drawn to the LEFT of this point)
-        // Visual Range: [left - Width, left]
-        const leftEdge = left - EST_WIDTH;
-        if (leftEdge < margin) {
-           // If it overflows left, force it to start at the margin
-           left = margin + EST_WIDTH; 
-        }
-      } 
-      else if (mode === 'right') {
-        // Mode: Right (Popup is drawn to the RIGHT of this point)
-        // Visual Range: [left, left + Width]
-        const rightEdge = left + EST_WIDTH;
-        if (rightEdge > viewportWidth - margin) {
-           // If it overflows right, force it to end at the margin
-           left = viewportWidth - margin - EST_WIDTH; 
-        }
-      }
-      
-      return left;
-    };
-
     switch (position) {
       case 'top':
         styles.top = anchorRect.top - gap;
-        // Pass center point, tell function it's centered
-        styles.left = getClampedLeft(anchorRect.left + (anchorRect.width / 2), 'center');
+        styles.left = anchorRect.left + (anchorRect.width / 2);
         break;
       case 'bottom':
         styles.top = anchorRect.bottom + gap;
-        styles.left = getClampedLeft(anchorRect.left + (anchorRect.width / 2), 'center');
+        styles.left = anchorRect.left + (anchorRect.width / 2);
         break;
       case 'left':
         styles.top = getSideTop();
-        // Pass the anchor point, tell function it extends Left
-        styles.left = getClampedLeft(anchorRect.left - gap, 'left');
+        styles.left = anchorRect.left - gap;
         break;
       case 'right':
         styles.top = getSideTop();
-        // Pass the anchor point, tell function it extends Right
-        styles.left = getClampedLeft(anchorRect.right + gap, 'right');
+        styles.left = anchorRect.right + gap;
         break;
     }
     return styles;
@@ -135,7 +91,7 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
     }
   };
 
-  const content = (
+  return createPortal(
     <motion.div 
       className="hover-card" 
       variants={sidebarVariants}
@@ -144,27 +100,53 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
       exit="exit"
       style={{
         ...getLayoutStyles(),
-        ...getMotionValues(),
+        ...getMotionValues(), 
         transformOrigin: position === 'left' || position === 'right' ? "center top" : "center center"
       }}
     >
-      {/* <h4 className="hover-card__title">{node.title}</h4> */}
-      <p className="hover-card__desc">{description}</p>
+      {/* 1. HEADER */}
+      <div className="hover-card__header">
+        <p className="hover-card__desc">{description}</p>
+      </div>
 
-      {questions.length > 0 && (
-        <div className="hover-card__questions-wrapper">
-          <span className="hover-card__questions-label">Explore Topic:</span>
-          <ul className="hover-card__questions-list">
-            {questions.map((q, i) => (
-              <li key={i} className="hover-card__question-item">
-                {q}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </motion.div>
+      {/* 2. QUESTIONS (No Title) */}
+      <div className="hover-card__questions-list">
+        {questions.map((q, i) => (
+          <button 
+            key={i} 
+            className="hover-card__question-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerChat(node.title, "context", q);
+            }}
+          >
+            <span className="question-text">{q}</span>
+            <svg className="question-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+        ))}
+      </div>
+
+      {/* 3. FOOTER */}
+      <div className="hover-card__footer">
+        <button 
+          className="hover-card__main-action"
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerChat(node.title, "general context");
+          }}
+        >
+          {/* Spark Icon */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          </svg>
+          <span>Explore Topic</span>
+        </button>
+      </div>
+
+    </motion.div>,
+    document.body
   );
-
-  return createPortal(content, document.body);
 }

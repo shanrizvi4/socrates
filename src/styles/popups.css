@@ -1,88 +1,131 @@
 /* src/styles/popups.css */
 
-/* --- HOVER POPUP CONTAINER --- */
+/* --- CONTAINER: The Field Note --- */
 .hover-card {
-  /* Position is now handled via inline styles in JS (fixed) */
-  width: 24rem; 
-  background-color: #EBE5CE;
-  color: #2A2F25;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-  /* border: 1px solid #58604B; */
-  
-  /* CRITICAL: No transition on the container itself to avoid conflicts */
-  transition: none !important;
+  width: 500px; 
+  max-width: 90vw;
+  background-color: #DECDB3; 
+  color: #58604B; 
+  /* border: 1px solid #58604B;  */
+  border-radius: 8px;
+  box-shadow: 
+    0 20px 40px -5px rgba(20, 25, 15, 0.4),
+    0 10px 10px -5px rgba(20, 25, 15, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
   text-align: left;
 }
 
-/* --- INTERNAL ELEMENTS (Unchanged) --- */
-.hover-card__header-line {
-  width: 40px; 
-  height: 4px; 
-  background-color: #58604B; 
-  margin-bottom: 0.75rem; 
-  border-radius: 2px;
-}
-
-.hover-card__title {
-  margin: 0 0 0.5rem 0; 
-  font-family: serif; 
-  font-size: 1.4rem; 
-  font-weight: 700;
-  line-height: 1.1;
-  color: #58604B; 
+/* --- HEADER --- */
+.hover-card__header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid rgba(88, 96, 75, 0.15); 
 }
 
 .hover-card__desc {
-  margin: 0 0 1rem 0; 
-  font-size: 0.85rem; 
-  line-height: 1.5; 
-  opacity: 0.9;
-  font-weight: 400;
-  color: #58604B; 
-}
-
-/* --- QUESTIONS SECTION --- */
-.hover-card__questions-wrapper {
-  margin-top: 0.5rem;
-  border-top: 1px solid rgba(88, 96, 75, 0.2);
-  padding-top: 0.75rem;
-}
-
-.hover-card__questions-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #58604B;
-  opacity: 0.7;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
-}
-
-.hover-card__questions-list {
-  list-style: none;
-  padding: 0;
+  font-family: 'Charter', serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #2F3428; 
   margin: 0;
+  font-weight: 500;
+}
+
+/* --- QUESTIONS LIST --- */
+.hover-card__questions-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  background-color: rgba(88, 96, 75, 0.05); 
 }
 
-.hover-card__question-item {
-  background-color: rgba(255, 255, 255, 0.5);
-  padding: 0.6rem 0.8rem;
+.hover-card__question-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.8rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(88, 96, 75, 0.1); 
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hover-card__question-btn:last-child {
+  border-bottom: none;
+}
+
+.hover-card__question-btn:hover {
+  background-color: rgba(88, 96, 75, 0.1); 
+}
+
+.question-text {
+  font-family: 'Charter', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #58604B;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.question-arrow {
+  color: #58604B;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.hover-card__question-btn:hover .question-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* --- FOOTER --- */
+.hover-card__footer {
+  padding: 1rem 1.5rem;
+  background-color: #DECDB3; 
+  border-top: 1px solid rgba(88, 96, 75, 0.15);
+  display: flex;
+  justify-content: center;
+}
+
+/* SOLID BUTTON STYLE */
+.hover-card__main-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  
+  padding: 0.75rem 1rem;
+  
+  background-color: #58604B; 
+  color: #DECDB3; 
+  
+  border: none;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #58604B; 
-  border: 1px solid transparent;
-  transition: all 0.2s;
-  cursor: pointer; 
+  
+  font-family: 'Charter', serif;
+  font-size: 0.95rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  
+  cursor: pointer;
+  /* Changed transition to only target color/shadow, not transform */
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(47, 52, 40, 0.2);
 }
 
-.hover-card__question-item:hover {
-  border-color: #58604B;
-  transform: translateX(2px);
+.hover-card__main-action:hover {
+  background-color: #3A4032; 
+  /* transform: translateY(-1px);  <-- REMOVED THIS LINE */
+  box-shadow: 0 4px 8px rgba(47, 52, 40, 0.25);
 }

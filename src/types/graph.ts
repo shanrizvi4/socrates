@@ -1,31 +1,36 @@
-export interface PopupData {
-  description: string;
-  questions: string[];
-}
-
-export interface LLMConfig {
-  definition: string;
-  exclude: string;
-}
-
 export interface Node {
   id: string;
   title: string;
   hook: string;
-  is_static: boolean;
+  childrenIds?: string[];
+  is_static?: boolean; // True for root nodes from JSON
   
-  childrenIds?: string[]; 
-  popup_data?: PopupData;
-  
-  // NEW: This holds the instructions for the AI
-  llm_config?: LLMConfig; 
-  
-  context_vector?: number[];
+  // Configuration for the LLM generation
+  llm_config?: {
+    definition?: string;
+    exclude?: string;
+  };
+
+  // The Rich Data for the HoverCard & Chat
+  popup_data?: {
+    description: string;
+    questions: string[];
+  };
 }
 
 export type NodeMap = Record<string, Node>;
 
-export interface GraphState {
-  nodes: NodeMap;
-  selectedPath: string[];
+export interface TaxonomyRoot {
+  id: string;
+  title: string;
+  hook: string;
+  children?: Node[];
+  popup_data?: {
+    description: string;
+    questions: string[];
+  };
+}
+
+export interface TaxonomyData {
+  roots: TaxonomyRoot[];
 }
