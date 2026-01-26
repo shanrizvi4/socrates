@@ -1,7 +1,9 @@
 import { Node } from "@/types/graph";
 import { useState, useRef } from "react";
 import { HoverCard, Position } from "./HoverCard";
-import { AnimatePresence } from "framer-motion"; 
+import { AnimatePresence } from "framer-motion";
+import { useGraphStore } from "@/lib/store";
+import { MessageCircle } from "lucide-react"; 
 
 interface NodeCardProps {
   node: Node;
@@ -15,9 +17,11 @@ export function NodeCard({ node, isActive, isSiblingActive, isLoading, onClick }
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState<Position>('top');
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
-  
+
   const cardRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { triggerChat } = useGraphStore();
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
@@ -76,10 +80,21 @@ export function NodeCard({ node, isActive, isSiblingActive, isLoading, onClick }
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="card-content">
+      <div className={`card-content ${isHovered ? 'hovered' : ''}`}>
         <h3>{node.title}</h3>
         <p>{node.hook}</p>
       </div>
+
+      <button
+        className={`card-explore-btn ${isHovered ? 'visible' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          triggerChat(node.title, "general context");
+        }}
+      >
+        <MessageCircle size={14} />
+        <span>Explore</span>
+      </button>
 
       <AnimatePresence>
         {isHovered && anchorRect && !isLoading && (

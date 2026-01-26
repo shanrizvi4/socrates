@@ -32,7 +32,7 @@ TASK: Generate 5 NEW sub-topics (Children) for the current node.
 
 ### 2. CONTENT RULES
 - **Titles:** Max 4 words. Simple and definitive.
-- **Hooks:** 80-100 chars. Active voice.
+- **Hooks:** 55-65 chars. Active voice.
 
 ### 3. POPUP DATA (REQUIRED)
 - **Description:** Robust summary (70-90 words). Explain the topic and contextualize *why* this sub-topic is structurally important. (Don't say anything like "This topic..." just write about the topic)

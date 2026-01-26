@@ -70,13 +70,13 @@
   font-family: 'Charter', serif;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #58604B;
+  color: #46576B;
   line-height: 1.4;
   flex: 1;
 }
 
 .question-arrow {
-  color: #58604B;
+  color: #46576B;
   opacity: 0.5;
   transition: transform 0.2s ease;
   margin-top: 2px;
@@ -88,44 +88,3 @@
   transform: translateX(3px);
 }
 
-/* --- FOOTER --- */
-.hover-card__footer {
-  padding: 1rem 1.5rem;
-  background-color: #DECDB3; 
-  border-top: 1px solid rgba(88, 96, 75, 0.15);
-  display: flex;
-  justify-content: center;
-}
-
-/* SOLID BUTTON STYLE */
-.hover-card__main-action {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  
-  padding: 0.75rem 1rem;
-  
-  background-color: #58604B; 
-  color: #DECDB3; 
-  
-  border: none;
-  border-radius: 6px;
-  
-  font-family: 'Charter', serif;
-  font-size: 0.95rem;
-  font-weight: bold;
-  letter-spacing: 0.02em;
-  
-  cursor: pointer;
-  /* Changed transition to only target color/shadow, not transform */
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 5px rgba(47, 52, 40, 0.2);
-}
-
-.hover-card__main-action:hover {
-  background-color: #3A4032; 
-  /* transform: translateY(-1px);  <-- REMOVED THIS LINE */
-  box-shadow: 0 4px 8px rgba(47, 52, 40, 0.25);
-}

@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* --- BASE THEME --- */
+  --olive-dark: #2F3428;  /* Ink / Text */
+  --olive-base: #58604B;  /* Primary UI Elements */
+  --paper-base: #DECDB3;  /* Backgrounds */
+
+  /* --- ACCENT PALETTE --- */
+  
+  /* 1. YOUR CLAY (Alerts, Deletes, Important tags) */
+  --clay: #ae543b;    
+  
+  /* 2. DEEP VERDIGRIS (Success, Nature, Growth) */
+  --verdigris: #365C58; 
+  
+  /* 3. FADED INDIGO (Info, Links, Water/Sky) */
+  --indigo: #46576B;    
+}
+
 /* 1. Reset */
 * {
   box-sizing: border-box;
