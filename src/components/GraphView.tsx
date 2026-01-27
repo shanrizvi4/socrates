@@ -27,6 +27,10 @@ export default function GraphView() {
 
   const [rows, setRows] = useState<RowData[]>([]);
 
+  console.log("HERE")
+
+  console.log("GraphView render, activePath:", activePath, "nodeMap keys:", Object.keys(nodeMap).length);
+
   useEffect(() => {
     const newRows: RowData[] = [];
 
@@ -34,13 +38,18 @@ export default function GraphView() {
     newRows.push({ parentId: null, nodes: getRootNodes() });
 
     // Subsequent Rows: The visible children of the selected nodes
+    console.log("Building rows, activePath:", activePath);
     activePath.forEach((nodeId) => {
+      const node = nodeMap[nodeId];
+      console.log(`Node ${nodeId}:`, node?.childrenIds?.length, "children, pages:", node?.childrenPages);
       const children = getVisibleChildren(nodeId);
+      console.log(`getVisibleChildren(${nodeId}):`, children.length, "visible");
       if (children.length > 0) {
         newRows.push({ parentId: nodeId, nodes: children });
       }
     });
 
+    console.log("Final rows:", newRows.length);
     setRows(newRows);
   }, [activePath, getVisibleChildren, nodeMap, nodePageIndex]);
 
@@ -69,6 +78,11 @@ export default function GraphView() {
           const pageInfo = parentId ? getNodePageInfo(parentId) : null;
           const showPagination = parentId && pageInfo && pageInfo.hasChildren;
           const isFetching = parentId ? fetchingIds.has(parentId) : false;
+
+          // Debug logging
+          if (parentId) {
+            console.log(`Row ${depth}: parentId=${parentId}, pageInfo=`, pageInfo, `showPagination=${showPagination}`);
+          }
 
           return (
             <div key={depth} className="graph-row-container">
