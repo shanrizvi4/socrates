@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   const { parentNode, pathHistory, excludeTitles = [] } = body;
 
   console.log("--- API CALLED (GEMINI 2.5 FLASH LITE) ---");
+  console.log("Path history:", pathHistory);
   if (excludeTitles.length > 0) {
     console.log(`Excluding ${excludeTitles.length} existing topics`);
   }
@@ -29,23 +30,28 @@ You are the Chief Taxonomist of an advanced Knowledge Graph.
 Your goal is to map human knowledge into a structured, infinite tree.
 
 TASK:
-Generate 5 NEW, distinct sub-topics (Children) for the current node + 5 Preview Grandchildren for each.
+Generate 5 NEW, distinct sub-topics (Children) for the current node.
 
-### 1. THE "ONE STEP DOWN" RULE (CRITICAL)
-- **Granularity:** Determine the correct level of granularity. Do not skip layers. If the topic is broad (e.g., "Physics"), break it into major branches (e.g., "Classical Mechanics"), not specific equations.
+### 0. CONTEXTUAL AWARENESS (MOST CRITICAL)
+- You will receive a CONTEXTUAL CHAIN showing the ancestor path leading to the current node.
+- **ALWAYS generate children specific to this context.** Do NOT generate generic sub-topics.
+- Example: If the chain is "World War 2 → Rise of Fascism → German Nazism → Totalitarian Control", children should be about totalitarian control SPECIFICALLY as practiced by Nazi Germany (e.g., "Gestapo Surveillance", "Propaganda Ministry", "Hitler Youth Indoctrination"), NOT generic concepts like "Censorship" or "Authoritarianism".
+
+### 1. THE "ONE STEP DOWN" RULE
+- **Granularity:** Determine the correct level of granularity. Do not skip layers.
 - **Components vs Examples:** The new topics must be structural *components* of the parent, not just random *examples*.
 - **Mutually Exclusive:** The new nodes must not overlap with each other.
 
 ### 2. LENGTH & STYLE CONSTRAINTS
-- **TITLES:** Max 4 words. Simple, punchy, and definitive (e.g., "Quantum Mechanics", not "The Study of Quantum Mechanics").
-- **HOOKS:** Max 60 chars. Explain *what* it is in active voice. (e.g., "The physics of the subatomic world.")
+- **TITLES:** Max 4 words. Simple, punchy, and definitive.
+- **HOOKS:** Max 60 chars. Explain *what* it is in active voice.
 
 ### 3. POPUP CONTENT (The "Smart Student" Protocol)
-- **DESCRIPTION:** A detailed, robust summary (approx 40-60 words). Contextualize *why* this sub-topic is structurally important. Explain the mechanism, not just the definition.
-- **QUESTIONS:** Generate exactly 3 natural, conversational questions that invite deep explanation.
-    1. **Causal:** Ask "How" or "Why," not "What." Focus on mechanisms.
+- **DESCRIPTION:** A detailed summary (40-60 words). Contextualize *why* this sub-topic is important within the given ancestral context.
+- **QUESTIONS:** Generate exactly 3 conversational questions specific to the contextual chain.
+    1. **Causal:** Ask "How" or "Why," focusing on mechanisms.
     2. **Structural:** Ask about limits, systems, and paradoxes.
-    3. **Tone:** Curious and conversational, not dry or academic.
+    3. **Tone:** Curious and conversational.
 
 OUTPUT FORMAT (JSON ONLY):
 {
@@ -73,14 +79,23 @@ OUTPUT FORMAT (JSON ONLY):
       ...(excludeTitles.length > 0 ? [`Already generated (DO NOT repeat these): ${excludeTitles.join(', ')}`] : [])
     ].join('. ');
 
-    const userPrompt = `
-      CONTEXT:
-      - PATH: ${JSON.stringify(pathHistory)}
-      - CURRENT: "${parentNode.title}"
-      - SCOPE: "${definition}"
-      - EXCLUDE: "${allExclusions}"
+    // Build ancestry context from the last 3 generations (excluding the current node)
+    const ancestryPath = pathHistory.slice(-4, -1); // Last 3 ancestors before current
+    const ancestryContext = ancestryPath.length > 0
+      ? `This topic exists within a specific context: ${ancestryPath.join(' → ')} → ${parentNode.title}. Generate children that are SPECIFICALLY relevant to this contextual chain, NOT general information about "${parentNode.title}" in isolation.`
+      : '';
 
-      Generate 5 NEW and DIFFERENT Children that do not overlap with any previously generated topics.
+    const userPrompt = `
+      CURRENT NODE: "${parentNode.title}"
+      ${ancestryContext ? `\nCONTEXTUAL CHAIN: ${ancestryContext}` : ''}
+
+      SCOPE: "${definition}"
+      EXCLUDE: "${allExclusions}"
+
+      CRITICAL: The children you generate must be specifically about "${parentNode.title}" AS IT RELATES TO the contextual chain above.
+      ${ancestryPath.length > 0 ? `For example, if the chain is "World War 2 → Rise of Fascism → German Nazism → Totalitarian Control", generate children about totalitarian control SPECIFICALLY in Nazi Germany during WW2, not general totalitarian control concepts.` : ''}
+
+      Generate 5 NEW and DIFFERENT Children.
     `;
 
     const result = await model.generateContent(userPrompt);

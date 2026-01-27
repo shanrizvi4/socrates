@@ -34,14 +34,14 @@ export function ChatExpanded() {
 
   const activeSession = activeChatId ? chatSessions[activeChatId] : null;
 
-  // Only auto-scroll if there's more than one message (not initial explore)
-  const hasUserMessage = activeSession?.messages.some(m => m.role === 'user');
+  // Only auto-scroll if there's a visible user message (not initial explore)
+  const hasVisibleUserMessage = activeSession?.messages.some(m => m.role === 'user' && !m.hidden);
 
   useEffect(() => {
-    if (scrollRef.current && hasUserMessage) {
+    if (scrollRef.current && hasVisibleUserMessage) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeSession?.messages, isChatLoading, hasUserMessage]);
+  }, [activeSession?.messages, isChatLoading, hasVisibleUserMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,15 +91,17 @@ export function ChatExpanded() {
         <div className="chat-messages chat-messages-expanded" ref={scrollRef}>
           {activeSession ? (
             <>
-              {activeSession.messages.map((msg, i) => (
-                <div key={i} className={`chat-message ${msg.role}`}>
-                  {msg.role === 'model' ? (
-                    <MarkdownContent content={msg.content} />
-                  ) : (
-                    msg.content
-                  )}
-                </div>
-              ))}
+              {activeSession.messages
+                .filter(msg => !msg.hidden)
+                .map((msg, i) => (
+                  <div key={i} className={`chat-message ${msg.role}`}>
+                    {msg.role === 'model' ? (
+                      <MarkdownContent content={msg.content} />
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                ))}
 
               {isChatLoading && (
                 <div className="typing-indicator">

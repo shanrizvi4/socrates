@@ -7,11 +7,12 @@ const genAI = process.env.GOOGLE_API_KEY
 const EXPLORE_SYSTEM_PROMPT = `
 You are the Librarian of the "Socrates" Knowledge Graph, creating rich exploratory content.
 
-Your task: Write an engaging, in-depth article (around 300 words) about the given topic. Speak like you're an encyclopedia, not like you're talking to a person. Keep it somewhat casual though.
+Your task: Write an engaging, in-depth article (around 600 words) about the given topic. Speak like you're an encyclopedia, not like you're talking to a person. Keep it somewhat casual though.
 
 STYLE:
 - Tone: Lean on being accessible and NOT pretentious. PLEASE DO NOT be pretentious, speak eloquently but normally (for example, avoid words like intertwined and tapestry talk normal)
 - Format: Use short paragraphs. Include a subtle structure with some headers and organization so that its not just one big blob of text but is instead more easily digestable.
+- Complete: Try not to be vague as much as possible, tell the complete answer as far as you can without hand-waiving. If you don't have space to cover something important in detail, include it in your suggested questions. Detail is key, teach with confidence.
 
 IMPORTANT: At the END of your response, you must include a JSON block with 3 suggested follow-up questions. Format it EXACTLY like this, on its own line at the very end:
 <!--QUESTIONS:["Question 1?", "Question 2?", "Question 3?"]-->
@@ -34,7 +35,7 @@ STYLE:
 IMPORTANT: At the END of your response, you must include a JSON block with 3 suggested follow-up questions. Format it EXACTLY like this, on its own line at the very end:
 <!--QUESTIONS:["Question 1?", "Question 2?", "Question 3?"]-->
 
-The questions should be interesting but not pretentious - what might a student ask as a follow up? Pick from:
+The questions should be interesting but not pretentious - what might a student ask as a follow up? A good question is that which if answered, will genuinely make the user better understand about the topic. Pick from:
 1. DEEPER - A "how" or "mechanism" question about internal workings
 2. BROADER - A question connecting to other concepts or fields
 3. LIMITS - A question about edge cases, challenges, or limitations
@@ -42,9 +43,10 @@ The questions should be interesting but not pretentious - what might a student a
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { message, nodeTitle, mode = 'chat', history } = body;
+  const { message, nodeTitle, ancestryPath = [], mode = 'chat', history } = body;
 
   console.log(`--- CHAT API CALLED (mode: ${mode}, streaming) ---`);
+  console.log("Ancestry path:", ancestryPath);
 
   try {
     if (!genAI) {
@@ -68,10 +70,15 @@ export async function POST(req: Request) {
       history: formattedHistory
     });
 
+    // Build ancestry context string
+    const ancestryContext = ancestryPath.length > 0
+      ? `\n\nIMPORTANT CONTEXT: This topic "${nodeTitle}" exists within a specific knowledge path: ${ancestryPath.join(' → ')} → ${nodeTitle}. Your response should be specifically about "${nodeTitle}" as it relates to this contextual chain, NOT general information about "${nodeTitle}" in isolation. For example, if discussing "Totalitarian Control" in the context of "World War 2 → Rise of Fascism → German Nazism", focus specifically on Nazi totalitarian control, not general totalitarianism.`
+      : '';
+
     // Enhance the message with context for explore mode
     const enhancedMessage = mode === 'explore'
-      ? `Write an in-depth exploration about "${nodeTitle}".`
-      : message;
+      ? `Write an in-depth exploration about "${nodeTitle}".${ancestryContext}`
+      : `${message}${ancestryContext}`;
 
     // Use streaming
     const result = await chat.sendMessageStream(enhancedMessage);

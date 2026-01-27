@@ -375,26 +375,28 @@ export const useGraphStore = create<StoreState>((set, get) => ({
       set({ isChatOpen: true });
     }
 
-    // Determine the prompt - for explore mode without a specific question, don't show user message
+    // Determine the prompt - hide the initial explore message in UI
     const isInitialExplore = mode === 'explore' && !specificQuestion;
     const prompt = specificQuestion || `Tell me about ${nodeTitle}.`;
 
-    // Only add user message if it's NOT an initial explore (user asked a follow-up)
-    if (!isInitialExplore) {
-      set((state) => {
-        const session = state.chatSessions[chatId!];
-        if (!session) return state;
-        return {
-          chatSessions: {
-            ...state.chatSessions,
-            [chatId!]: {
-              ...session,
-              messages: [...session.messages, { role: 'user' as const, content: prompt }]
-            }
+    // Always add user message to session (required for Gemini history to start with 'user' role)
+    set((state) => {
+      const session = state.chatSessions[chatId!];
+      if (!session) return state;
+      return {
+        chatSessions: {
+          ...state.chatSessions,
+          [chatId!]: {
+            ...session,
+            messages: [...session.messages, {
+              role: 'user' as const,
+              content: prompt,
+              hidden: isInitialExplore // Hide "Tell me about X" in UI
+            }]
           }
-        };
-      });
-    }
+        }
+      };
+    });
 
     set({ isChatLoading: true });
 
@@ -422,12 +424,20 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     });
 
     try {
+      // Build ancestry context (last 3 ancestors before the current node)
+      const currentNodeIndex = freshState.activePath.indexOf(nodeId);
+      const ancestorIds = currentNodeIndex > 0
+        ? freshState.activePath.slice(Math.max(0, currentNodeIndex - 3), currentNodeIndex)
+        : freshState.activePath.slice(-4, -1);
+      const ancestryPath = ancestorIds.map(id => freshState.nodeMap[id]?.title).filter(Boolean);
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: prompt,
           nodeTitle,
+          ancestryPath,
           mode,
           history: currentSession.messages
         })

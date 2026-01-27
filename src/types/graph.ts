@@ -41,6 +41,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   suggestedQuestions?: string[];
+  hidden?: boolean; // Hide from UI but keep in history for API
 }
 
 export interface ChatSession {
