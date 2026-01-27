@@ -1,119 +1,163 @@
 import { useGraphStore } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import { useShallow } from 'zustand/react/shallow'; 
+import { useShallow } from 'zustand/react/shallow';
+import { SuggestedQuestions } from "./chat/SuggestedQuestions";
+import { ChatExpanded } from "./chat/ChatExpanded";
+import { MarkdownContent } from "./chat/MarkdownContent";
 import "../styles/chat.css";
 
 export function ChatSidebar() {
-  const { isChatOpen, chatHistory, isChatLoading, activeNodeTitle, triggerChat, toggleChat, resetChat } = useGraphStore(
+  const {
+    isChatOpen,
+    chatSessions,
+    activeChatId,
+    isChatLoading,
+    toggleChat,
+    toggleChatExpanded,
+    sendMessage
+  } = useGraphStore(
     useShallow((state) => ({
       isChatOpen: state.isChatOpen,
-      chatHistory: state.chatHistory,
+      chatSessions: state.chatSessions,
+      activeChatId: state.activeChatId,
       isChatLoading: state.isChatLoading,
-      activeNodeTitle: state.activeNodeTitle, 
-      triggerChat: state.triggerChat,
       toggleChat: state.toggleChat,
-      resetChat: state.resetChat,
+      toggleChatExpanded: state.toggleChatExpanded,
+      sendMessage: state.sendMessage
     }))
   );
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const activeSession = activeChatId ? chatSessions[activeChatId] : null;
+
+  // Only auto-scroll if there's more than one message (not initial explore)
+  const hasUserMessage = activeSession?.messages.some(m => m.role === 'user');
+
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && hasUserMessage) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [chatHistory, isChatLoading]);
+  }, [activeSession?.messages, isChatLoading, hasUserMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isChatLoading) return;
-    
-    const currentTitle = activeNodeTitle || "Manual Query";
-    triggerChat(currentTitle, "User Follow-up", input); 
+    sendMessage(input);
     setInput("");
   };
 
-  const displayTitle = activeNodeTitle || "Field Notes";
+  const displayTitle = activeSession?.nodeTitle || "Field Notes";
+
+  // Find last model message with suggested questions
+  const lastModelMessage = activeSession?.messages
+    .filter(m => m.role === 'model')
+    .pop();
+  const suggestedQuestions = lastModelMessage?.suggestedQuestions || [];
 
   return (
-    <div className={`chat-sidebar ${isChatOpen ? 'open' : 'closed'}`}>
-      
-      {/* HEADER: Two-Row Layout */}
-      <div className="chat-header">
-        
-        {/* ROW 1: Utility Bar */}
-        <div className="header-controls">
-            {/* LEFT: New Note */}
-            <button 
-              onClick={resetChat} 
+    <>
+      <div className={`chat-sidebar ${isChatOpen ? 'open' : 'closed'}`}>
+
+        {/* HEADER: Two-Row Layout */}
+        <div className="chat-header">
+
+          {/* ROW 1: Utility Bar */}
+          <div className="header-controls">
+            {/* LEFT: Expand */}
+            <button
+              onClick={toggleChatExpanded}
               className="control-btn"
-              title="Start a new session"
+              title="Expand to full view"
             >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>New Chat</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+              <span>Expand</span>
             </button>
 
             {/* RIGHT: Close */}
-            <button 
-              onClick={toggleChat} 
+            <button
+              onClick={toggleChat}
               className="control-btn"
               title="Close panel"
             >
-                <span>Close</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+              <span>Close</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
+          </div>
+
+          {/* ROW 2: Title */}
+          <h2 className="chat-title">{displayTitle}</h2>
         </div>
 
-        {/* ROW 2: Title */}
-        <h2 className="chat-title">{displayTitle}</h2>
-      </div>
+        {/* MESSAGES */}
+        <div className="chat-messages" ref={scrollRef}>
+          {activeSession ? (
+            <>
+              {activeSession.messages.map((msg, i) => (
+                <div key={i} className={`chat-message ${msg.role}`}>
+                  {msg.role === 'model' ? (
+                    <MarkdownContent content={msg.content} />
+                  ) : (
+                    msg.content
+                  )}
+                </div>
+              ))}
 
-      {/* MESSAGES */}
-      <div className="chat-messages" ref={scrollRef}>
-        {chatHistory.map((msg, i) => (
-          <div key={i} className={`chat-message ${msg.role}`}>
-            {msg.content}
-          </div>
-        ))}
-        
-        {isChatLoading && (
-          <div className="typing-indicator">
-             <div className="typing-dot" style={{ animationDelay: '0ms' }} />
-             <div className="typing-dot" style={{ animationDelay: '150ms' }} />
-             <div className="typing-dot" style={{ animationDelay: '300ms' }} />
-          </div>
-        )}
-      </div>
+              {isChatLoading && (
+                <div className="typing-indicator">
+                  <div className="typing-dot" style={{ animationDelay: '0ms' }} />
+                  <div className="typing-dot" style={{ animationDelay: '150ms' }} />
+                  <div className="typing-dot" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
 
-      {/* INPUT */}
-      <form onSubmit={handleSubmit} className="chat-input-area">
-        <div className="input-wrapper">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask about ${activeNodeTitle || 'this topic'}...`}
-            className="chat-input"
-          />
-          <button 
-            type="submit"
-            disabled={isChatLoading || !input.trim()}
-            className="chat-send-btn"
-            aria-label="Send Message"
-          >
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-             </svg>
-          </button>
+              {!isChatLoading && suggestedQuestions.length > 0 && (
+                <SuggestedQuestions questions={suggestedQuestions} />
+              )}
+            </>
+          ) : (
+            <div className="chat-empty-state">
+              <p>Click "Explore" on any topic to start a conversation.</p>
+            </div>
+          )}
         </div>
-      </form>
-    </div>
+
+        {/* INPUT */}
+        <form onSubmit={handleSubmit} className="chat-input-area">
+          <div className="input-wrapper">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Ask about ${activeSession?.nodeTitle || 'a topic'}...`}
+              className="chat-input"
+              disabled={!activeSession}
+            />
+            <button
+              type="submit"
+              disabled={isChatLoading || !input.trim() || !activeSession}
+              className="chat-send-btn"
+              aria-label="Send Message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Expanded View (Portal) */}
+      <ChatExpanded />
+    </>
   );
 }

@@ -79,15 +79,15 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
 
   const sidebarVariants = {
     hidden: { opacity: 0, scale: 0.95 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
-      transition: { type: "spring", stiffness: 300, damping: 25 } 
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: { type: "spring" as const, stiffness: 300, damping: 25 }
     },
-    exit: { 
-      opacity: 0, 
-      scale: 0.95, 
-      transition: { duration: 0.2 } 
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      transition: { duration: 0.2 }
     }
   };
 
@@ -112,12 +112,12 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
       {/* 2. QUESTIONS (No Title) */}
       <div className="hover-card__questions-list">
         {questions.map((q, i) => (
-          <button 
-            key={i} 
+          <button
+            key={i}
             className="hover-card__question-btn"
             onClick={(e) => {
               e.stopPropagation();
-              triggerChat(node.title, "context", q);
+              triggerChat(node.id, node.title, "chat", q, true);
             }}
           >
             <span className="question-text">{q}</span>

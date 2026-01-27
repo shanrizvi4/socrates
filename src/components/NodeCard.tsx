@@ -89,7 +89,7 @@ export function NodeCard({ node, isActive, isSiblingActive, isLoading, onClick }
         className={`card-explore-btn ${isHovered ? 'visible' : ''}`}
         onClick={(e) => {
           e.stopPropagation();
-          triggerChat(node.title, "general context");
+          triggerChat(node.id, node.title, "explore", null, true);
         }}
       >
         <MessageCircle size={14} />

@@ -1,36 +1,40 @@
 import taxonomy from '@/data/taxonomy.json';
-import { Node, NodeMap } from '@/types/graph';
+import { Node, NodeMap, ChatMessage, ChatSession } from '@/types/graph';
 import { create } from 'zustand';
-
-// --- TYPES ---
-export interface ChatMessage {
-  role: 'user' | 'model';
-  content: string;
-}
 
 interface StoreState {
   // GRAPH STATE
   nodeMap: NodeMap;
   activePath: string[];
   isLoading: boolean;
-  fetchingIds: Set<string>; 
-  
+  fetchingIds: Set<string>;
+  nodePageIndex: Record<string, number>; // Current page for each node
+
   // CHAT STATE
   isChatOpen: boolean;
   isChatLoading: boolean;
-  chatHistory: ChatMessage[];
-  activeNodeTitle: string | null; 
+  isChatExpanded: boolean;
+  chatSessions: Record<string, ChatSession>;
+  activeChatId: string | null;
+  chatListOrder: string[]; // Most recent first
 
   // ACTIONS
   selectNode: (nodeId: string, depth: number) => void;
   getNodeChildren: (nodeId: string) => Node[];
+  getVisibleChildren: (nodeId: string) => Node[];
   generateChildren: (parentNode: Node, silent?: boolean) => Promise<void>;
-  
+  generateMoreChildren: (nodeId: string) => Promise<void>;
+  setNodePage: (nodeId: string, pageIndex: number) => void;
+  getNodePageInfo: (nodeId: string) => { current: number; total: number; hasChildren: boolean };
+
   // CHAT ACTIONS
   toggleChat: () => void;
-  triggerChat: (nodeTitle: string, contextTitle: string, specificQuestion?: string) => Promise<void>;
-  resetChat: () => void; 
-  addMessage: (role: 'user' | 'model', content: string) => void;
+  toggleChatExpanded: () => void;
+  triggerChat: (nodeId: string, nodeTitle: string, mode: 'explore' | 'chat', specificQuestion?: string | null, openChat?: boolean) => Promise<void>;
+  sendMessage: (message: string) => Promise<void>;
+  switchChat: (chatId: string) => void;
+  createNewChat: (nodeId: string, nodeTitle: string) => string;
+  getActiveSession: () => ChatSession | null;
 }
 
 const initializeNodes = (): NodeMap => {
@@ -48,8 +52,8 @@ const initializeNodes = (): NodeMap => {
       ...root,
       childrenIds: rootChildrenIds,
       popup_data: root.popup_data || {
-        description: root.description || root.hook,
-        questions: root.questions || [] 
+        description: root.hook,
+        questions: []
       }
     };
     map[root.id] = normalizedRoot as unknown as Node;
@@ -63,26 +67,14 @@ export const useGraphStore = create<StoreState>((set, get) => ({
   activePath: [],
   isLoading: false,
   fetchingIds: new Set(),
-  
+  nodePageIndex: {},
+
   isChatOpen: false,
   isChatLoading: false,
-  activeNodeTitle: "Leaf Venation Patterns", 
-  
-  // FILLER CONTENT (Model First)
-  chatHistory: [
-    { 
-      role: 'model', 
-      content: "Leaf venation—the arrangement of veins in a leaf blade—is critical for mechanical support and the transport of water and nutrients. \n\nIn this specimen, we see a reticulate (net-like) pattern characteristic of dicots. The primary midrib branches into secondary and tertiary veins, forming a complex mesh that ensures redundancy; if one path is damaged by insects, resources can bypass the injury. This density is often correlated with the plant's hydraulic capacity and its ability to photosynthesize in high-light environments." 
-    },
-    { 
-      role: 'user', 
-      content: "That makes sense. I noticed the veins near the margin are much denser than the ones near the midrib. Is that normal?" 
-    },
-    { 
-      role: 'model', 
-      content: "Yes, that is a common adaptation. Increased vein density at the margins helps prevent desiccation (drying out) where the leaf is most vulnerable to wind and evaporation. It reinforces the structural integrity of the leaf edge, preventing tearing." 
-    }
-  ],
+  isChatExpanded: false,
+  chatSessions: {},
+  activeChatId: null,
+  chatListOrder: [],
 
   // --- GRAPH ACTIONS ---
   selectNode: async (nodeId, depth) => {
@@ -105,7 +97,7 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     if (state.fetchingIds.has(parentNode.id)) return;
 
     if (!silent) set({ isLoading: true });
-    
+
     set((state) => {
       const newSet = new Set(state.fetchingIds);
       newSet.add(parentNode.id);
@@ -115,7 +107,8 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     try {
       const payload = {
         parentNode,
-        pathHistory: state.activePath.map(id => state.nodeMap[id]?.title)
+        pathHistory: state.activePath.map(id => state.nodeMap[id]?.title),
+        excludeTitles: [] // First generation has no exclusions
       };
 
       const res = await fetch('/api/generate', {
@@ -128,21 +121,22 @@ export const useGraphStore = create<StoreState>((set, get) => ({
       if (!res.ok) throw new Error(data.error || "API Request Failed");
 
       const newNodesMap: NodeMap = {};
-      const parentChildrenIds: string[] = [];
+      const pageChildrenIds: string[] = [];
+      const pageIndex = 0;
 
       data.children.forEach((child: any, i: number) => {
-        const childId = `${parentNode.id}_${i}`;
+        const childId = `${parentNode.id}_p${pageIndex}_${i}`;
         const newNode = {
           id: childId,
           title: child.title,
           hook: child.hook,
           is_static: false,
-          childrenIds: [], 
+          childrenIds: [],
           llm_config: child.llm_config,
-          popup_data: child.popup_data 
+          popup_data: child.popup_data
         };
         newNodesMap[childId] = newNode;
-        parentChildrenIds.push(childId);
+        pageChildrenIds.push(childId);
       });
 
       set((state) => ({
@@ -151,8 +145,13 @@ export const useGraphStore = create<StoreState>((set, get) => ({
           ...newNodesMap,
           [parentNode.id]: {
             ...state.nodeMap[parentNode.id],
-            childrenIds: parentChildrenIds
+            childrenIds: pageChildrenIds,
+            childrenPages: [pageChildrenIds]
           }
+        },
+        nodePageIndex: {
+          ...state.nodePageIndex,
+          [parentNode.id]: 0
         },
         isLoading: false
       }));
@@ -169,11 +168,156 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     }
   },
 
+  generateMoreChildren: async (nodeId) => {
+    const state = get();
+    const parentNode = state.nodeMap[nodeId];
+    if (!parentNode || state.fetchingIds.has(nodeId)) return;
+
+    set({ isLoading: true });
+
+    set((state) => {
+      const newSet = new Set(state.fetchingIds);
+      newSet.add(nodeId);
+      return { fetchingIds: newSet };
+    });
+
+    try {
+      // Collect all existing child titles to exclude
+      const existingChildIds = parentNode.childrenIds || [];
+      const excludeTitles = existingChildIds
+        .map(id => state.nodeMap[id]?.title)
+        .filter(Boolean);
+
+      const payload = {
+        parentNode,
+        pathHistory: state.activePath.map(id => state.nodeMap[id]?.title),
+        excludeTitles
+      };
+
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "API Request Failed");
+
+      const newNodesMap: NodeMap = {};
+      const pageChildrenIds: string[] = [];
+
+      // If no pages exist yet, create page 0 from existing children
+      let existingPages = parentNode.childrenPages || [];
+      if (existingPages.length === 0 && existingChildIds.length > 0) {
+        existingPages = [existingChildIds];
+      }
+
+      const newPageIndex = existingPages.length;
+
+      data.children.forEach((child: any, i: number) => {
+        const childId = `${nodeId}_p${newPageIndex}_${i}`;
+        const newNode = {
+          id: childId,
+          title: child.title,
+          hook: child.hook,
+          is_static: false,
+          childrenIds: [],
+          llm_config: child.llm_config,
+          popup_data: child.popup_data
+        };
+        newNodesMap[childId] = newNode;
+        pageChildrenIds.push(childId);
+      });
+
+      set((state) => {
+        const currentNode = state.nodeMap[nodeId];
+        let currentPages = currentNode.childrenPages || [];
+
+        // If no pages exist yet, create page 0 from existing children
+        if (currentPages.length === 0 && (currentNode.childrenIds?.length ?? 0) > 0) {
+          currentPages = [currentNode.childrenIds!];
+        }
+
+        const allChildrenIds = [...(currentNode.childrenIds || []), ...pageChildrenIds];
+
+        return {
+          nodeMap: {
+            ...state.nodeMap,
+            ...newNodesMap,
+            [nodeId]: {
+              ...currentNode,
+              childrenIds: allChildrenIds,
+              childrenPages: [...currentPages, pageChildrenIds]
+            }
+          },
+          nodePageIndex: {
+            ...state.nodePageIndex,
+            [nodeId]: currentPages.length // Jump to the new page (0-indexed)
+          },
+          isLoading: false
+        };
+      });
+
+    } catch (error) {
+      console.error("❌ GENERATION FAILED:", error);
+      set({ isLoading: false });
+    } finally {
+      set((state) => {
+        const newSet = new Set(state.fetchingIds);
+        newSet.delete(nodeId);
+        return { fetchingIds: newSet };
+      });
+    }
+  },
+
+  setNodePage: (nodeId, pageIndex) => {
+    set((state) => ({
+      nodePageIndex: {
+        ...state.nodePageIndex,
+        [nodeId]: pageIndex
+      }
+    }));
+  },
+
+  getNodePageInfo: (nodeId) => {
+    const state = get();
+    const node = state.nodeMap[nodeId];
+    if (!node) return { current: 1, total: 0, hasChildren: false };
+
+    const pages = node.childrenPages;
+    const hasChildren = (node.childrenIds?.length ?? 0) > 0;
+
+    // If no pages structure yet but has children, treat as 1 page
+    if (!pages || pages.length === 0) {
+      return { current: 1, total: hasChildren ? 1 : 0, hasChildren };
+    }
+
+    const current = state.nodePageIndex[nodeId] ?? 0;
+    return { current: current + 1, total: pages.length, hasChildren };
+  },
+
   getNodeChildren: (nodeId) => {
     const state = get();
     const node = state.nodeMap[nodeId];
     if (!node || !node.childrenIds) return [];
+    // Return all children (used internally)
     return node.childrenIds.map(id => state.nodeMap[id]).filter(Boolean);
+  },
+
+  getVisibleChildren: (nodeId) => {
+    const state = get();
+    const node = state.nodeMap[nodeId];
+    if (!node) return [];
+
+    const pages = node.childrenPages;
+    if (!pages || pages.length === 0) {
+      // Fallback for nodes without pages (legacy or root children)
+      return (node.childrenIds || []).map(id => state.nodeMap[id]).filter(Boolean);
+    }
+
+    const currentPage = state.nodePageIndex[nodeId] ?? 0;
+    const pageIds = pages[currentPage] || [];
+    return pageIds.map(id => state.nodeMap[id]).filter(Boolean);
   },
 
   // --- CHAT ACTIONS ---
@@ -181,55 +325,232 @@ export const useGraphStore = create<StoreState>((set, get) => ({
     set((state) => ({ isChatOpen: !state.isChatOpen }));
   },
 
-  resetChat: () => {
-    set({
-      chatHistory: [{ role: 'model', content: "New page. I am ready to record your observations." }],
-      activeNodeTitle: null
-    });
+  toggleChatExpanded: () => {
+    set((state) => ({ isChatExpanded: !state.isChatExpanded }));
   },
 
-  addMessage: (role, content) => {
-    set((state) => ({
-      chatHistory: [...state.chatHistory, { role, content }]
-    }));
-  },
-
-  triggerChat: async (nodeTitle, contextTitle, specificQuestion) => {
+  getActiveSession: () => {
     const state = get();
-    
-    set({ 
-      isChatOpen: true, 
-      isChatLoading: true,
-      activeNodeTitle: nodeTitle 
+    if (!state.activeChatId) return null;
+    return state.chatSessions[state.activeChatId] || null;
+  },
+
+  createNewChat: (nodeId, nodeTitle) => {
+    const chatId = `chat_${nodeId}_${Date.now()}`;
+    const newSession: ChatSession = {
+      id: chatId,
+      nodeId,
+      nodeTitle,
+      messages: [],
+      createdAt: Date.now()
+    };
+
+    set((state) => ({
+      chatSessions: {
+        ...state.chatSessions,
+        [chatId]: newSession
+      },
+      chatListOrder: [chatId, ...state.chatListOrder],
+      activeChatId: chatId
+    }));
+
+    return chatId;
+  },
+
+  switchChat: (chatId) => {
+    set({ activeChatId: chatId });
+  },
+
+  triggerChat: async (nodeId, nodeTitle, mode, specificQuestion = null, openChat = true) => {
+    // Create or find existing chat session for this node
+    let chatId = get().activeChatId;
+    const existingSession = get().chatSessions[chatId || ''];
+
+    // Create new session if none exists or if it's for a different node
+    if (!existingSession || existingSession.nodeId !== nodeId) {
+      chatId = get().createNewChat(nodeId, nodeTitle);
+    }
+
+    if (openChat) {
+      set({ isChatOpen: true });
+    }
+
+    // Determine the prompt - for explore mode without a specific question, don't show user message
+    const isInitialExplore = mode === 'explore' && !specificQuestion;
+    const prompt = specificQuestion || `Tell me about ${nodeTitle}.`;
+
+    // Only add user message if it's NOT an initial explore (user asked a follow-up)
+    if (!isInitialExplore) {
+      set((state) => {
+        const session = state.chatSessions[chatId!];
+        if (!session) return state;
+        return {
+          chatSessions: {
+            ...state.chatSessions,
+            [chatId!]: {
+              ...session,
+              messages: [...session.messages, { role: 'user' as const, content: prompt }]
+            }
+          }
+        };
+      });
+    }
+
+    set({ isChatLoading: true });
+
+    // Get fresh state for API call
+    const freshState = get();
+    const currentSession = freshState.chatSessions[chatId!];
+
+    // Add a placeholder model message for streaming
+    const modelMessageIndex = currentSession.messages.length;
+    set((state) => {
+      const session = state.chatSessions[chatId!];
+      if (!session) return state;
+      return {
+        chatSessions: {
+          ...state.chatSessions,
+          [chatId!]: {
+            ...session,
+            messages: [
+              ...session.messages,
+              { role: 'model' as const, content: '' }
+            ]
+          }
+        }
+      };
     });
-
-    const prompt = specificQuestion 
-      ? specificQuestion 
-      : `Tell me about ${nodeTitle} in the context of ${contextTitle}.`;
-
-    state.addMessage('user', prompt);
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: prompt,
-          history: state.chatHistory 
+          nodeTitle,
+          mode,
+          history: currentSession.messages
         })
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error('API request failed');
 
-      state.addMessage('model', data.response);
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.text) {
+                fullContent += parsed.text;
+
+                // Update the message content in real-time
+                set((state) => {
+                  const session = state.chatSessions[chatId!];
+                  if (!session) return state;
+
+                  const messages = [...session.messages];
+                  messages[modelMessageIndex] = {
+                    ...messages[modelMessageIndex],
+                    content: fullContent
+                  };
+
+                  return {
+                    chatSessions: {
+                      ...state.chatSessions,
+                      [chatId!]: { ...session, messages }
+                    }
+                  };
+                });
+              }
+            } catch {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+
+      // Parse out suggested questions from the content
+      const questionsMatch = fullContent.match(/<!--QUESTIONS:(\[.*?\])-->/);
+      let suggestedQuestions: string[] = [];
+      let cleanContent = fullContent;
+
+      if (questionsMatch) {
+        try {
+          suggestedQuestions = JSON.parse(questionsMatch[1]);
+          cleanContent = fullContent.replace(/<!--QUESTIONS:\[.*?\]-->/, '').trim();
+        } catch {
+          console.warn('Failed to parse suggested questions');
+        }
+      }
+
+      // Final update with clean content and suggested questions
+      set((state) => {
+        const session = state.chatSessions[chatId!];
+        if (!session) return { isChatLoading: false };
+
+        const messages = [...session.messages];
+        messages[modelMessageIndex] = {
+          role: 'model' as const,
+          content: cleanContent,
+          suggestedQuestions
+        };
+
+        return {
+          chatSessions: {
+            ...state.chatSessions,
+            [chatId!]: { ...session, messages }
+          },
+          isChatLoading: false
+        };
+      });
 
     } catch (error) {
       console.error("Chat Error:", error);
-      state.addMessage('model', "I'm having trouble connecting to the library archives right now.");
-    } finally {
-      set({ isChatLoading: false });
+      set((state) => {
+        const session = state.chatSessions[chatId!];
+        if (!session) return { isChatLoading: false };
+
+        const messages = [...session.messages];
+        messages[modelMessageIndex] = {
+          role: 'model' as const,
+          content: "I'm having trouble connecting to the library archives right now."
+        };
+
+        return {
+          chatSessions: {
+            ...state.chatSessions,
+            [chatId!]: { ...session, messages }
+          },
+          isChatLoading: false
+        };
+      });
     }
+  },
+
+  sendMessage: async (message) => {
+    const state = get();
+    const chatId = state.activeChatId;
+    const session = chatId ? state.chatSessions[chatId] : null;
+
+    if (!session || !message.trim()) return;
+
+    // Use triggerChat with chat mode
+    await get().triggerChat(session.nodeId, session.nodeTitle, 'chat', message, false);
   }
 }));
 
