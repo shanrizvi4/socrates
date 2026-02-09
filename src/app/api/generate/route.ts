@@ -43,8 +43,8 @@ Generate 5 NEW, distinct sub-topics (Children) for the current node.
 - **Mutually Exclusive:** The new nodes must not overlap with each other.
 
 ### 2. LENGTH & STYLE CONSTRAINTS
-- **TITLES:** Max 4 words. Simple, punchy, and definitive.
-- **HOOKS:** Max 60 chars. Explain *what* it is in active voice.
+- **TITLES:** Max 20 characters (including spaces). Keep to 2-3 punchy words. This is a hard limit — titles MUST fit in 20 characters.
+- **HOOKS:** Max 50 characters (including spaces). Explain *what* it is in active voice. This is a hard limit.
 
 ### 3. POPUP CONTENT (The "Smart Student" Protocol)
 - **DESCRIPTION:** A detailed summary (40-60 words). Contextualize *why* this sub-topic is important within the given ancestral context.

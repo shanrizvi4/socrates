@@ -22,11 +22,11 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.5rem;
-  
+  gap: 1.1rem;
+
   /* Stacking Context Base */
-  position: relative; 
-  
+  position: relative;
+
   /* Animation */
   opacity: 0;
   animation: slideDownFade 1.0s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -43,66 +43,149 @@
   }
 }
 
-/* 3. Row Container with Pagination */
+/* 3. Row Container — stacks cards+nav above explore-more */
 .graph-row-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
   width: 100%;
 }
 
-/* 4. Pagination Controls */
-.row-pagination {
+/* 4. Horizontal wrapper: cards + right-side nav arrows/dots
+   Spacer on left balances nav on right, keeping cards centered. */
+.graph-row-with-nav {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 1.5rem;
+  width: 100%;
 }
 
-.pagination-btn {
+/* Invisible spacer — mirrors nav width to keep cards centered */
+.nav-balance-spacer {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+/* 5. Right-side navigation (arrows + dots) */
+.row-nav-arrows {
+  width: 70px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nav-arrow-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: rgba(255, 255, 255, 0.85);
+  width: 24px;
+  height: 24px;
+  background: rgba(222, 205, 179, 0.12);
+  border: 1px solid rgba(222, 205, 179, 0.3);
+  border-radius: 50%;
+  color: rgba(222, 205, 179, 0.85);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
+.nav-arrow-btn:hover:not(:disabled) {
+  background: rgba(222, 205, 179, 0.25);
+  border-color: rgba(222, 205, 179, 0.5);
 }
 
-.pagination-btn:disabled {
+.nav-arrow-btn:disabled {
   opacity: 0.3;
   cursor: default;
 }
 
-.pagination-indicator {
+/* 6. Dot indicators — vertical stack */
+.nav-dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0.25rem;
+}
+
+.nav-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(222, 205, 179, 0.3);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.nav-dot:hover {
+  background: rgba(222, 205, 179, 0.6);
+}
+
+.nav-dot.active {
+  background: rgba(222, 205, 179, 0.9);
+  transform: scale(1.4);
+  box-shadow: 0 0 6px rgba(222, 205, 179, 0.4);
+}
+
+.nav-dot.small {
+  transform: scale(0.6);
+  opacity: 0.5;
+}
+
+/* 7. Explore More button — centered below cards */
+.row-explore-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.explore-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
   font-family: 'Charter', serif;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: bold;
-  padding: 0.25rem 0;
-  min-width: 30px;
-  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(222, 205, 179, 0.85);
+  background: transparent;
+  border: 1px solid rgba(222, 205, 179, 0.3);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.generate-more-btn {
-  margin-top: 0.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding-top: 0.25rem;
+.explore-more-btn:hover:not(:disabled) {
+  background: rgba(222, 205, 179, 0.1);
+  border-color: rgba(222, 205, 179, 0.5);
+  color: rgba(222, 205, 179, 1);
 }
 
-.generate-more-btn:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.25);
+.explore-more-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 8. Loading state for explore-more */
+.explore-more-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-family: 'Charter', serif;
+  font-size: 0.85rem;
+  color: rgba(222, 205, 179, 0.7);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }

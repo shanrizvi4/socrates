@@ -4,11 +4,37 @@ import { useGraphStore, getRootNodes } from "@/lib/store";
 import { NodeCard } from "./NodeCard";
 import { useEffect, useState } from "react";
 import { Node } from "@/types/graph";
-import { ChevronUp, ChevronDown, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from "lucide-react";
 
 interface RowData {
   parentId: string | null;
   nodes: Node[];
+}
+
+const MAX_DOTS = 5;
+
+function getVisibleDots(current: number, total: number) {
+  // current is 0-indexed page index
+  if (total <= MAX_DOTS) {
+    return Array.from({ length: total }, (_, i) => ({
+      index: i,
+      size: i === current ? 'active' as const : 'normal' as const
+    }));
+  }
+
+  // Sliding window centered on active dot
+  let start = current - Math.floor(MAX_DOTS / 2);
+  start = Math.max(0, Math.min(start, total - MAX_DOTS));
+
+  return Array.from({ length: MAX_DOTS }, (_, i) => {
+    const index = start + i;
+    let size: 'active' | 'normal' | 'small' = 'normal';
+    if (index === current) size = 'active';
+    else if (i === 0 && start > 0) size = 'small';
+    else if (i === MAX_DOTS - 1 && start + MAX_DOTS < total) size = 'small';
+    return { index, size };
+  });
 }
 
 export default function GraphView() {
@@ -27,10 +53,6 @@ export default function GraphView() {
 
   const [rows, setRows] = useState<RowData[]>([]);
 
-  console.log("HERE")
-
-  console.log("GraphView render, activePath:", activePath, "nodeMap keys:", Object.keys(nodeMap).length);
-
   useEffect(() => {
     const newRows: RowData[] = [];
 
@@ -38,33 +60,32 @@ export default function GraphView() {
     newRows.push({ parentId: null, nodes: getRootNodes() });
 
     // Subsequent Rows: The visible children of the selected nodes
-    console.log("Building rows, activePath:", activePath);
     activePath.forEach((nodeId) => {
-      const node = nodeMap[nodeId];
-      console.log(`Node ${nodeId}:`, node?.childrenIds?.length, "children, pages:", node?.childrenPages);
       const children = getVisibleChildren(nodeId);
-      console.log(`getVisibleChildren(${nodeId}):`, children.length, "visible");
       if (children.length > 0) {
         newRows.push({ parentId: nodeId, nodes: children });
       }
     });
 
-    console.log("Final rows:", newRows.length);
     setRows(newRows);
   }, [activePath, getVisibleChildren, nodeMap, nodePageIndex]);
 
-  const handlePageUp = (nodeId: string) => {
+  const handlePagePrev = (nodeId: string) => {
     const { current } = getNodePageInfo(nodeId);
     if (current > 1) {
-      setNodePage(nodeId, current - 2); // current is 1-indexed, setNodePage is 0-indexed
+      setNodePage(nodeId, current - 2);
     }
   };
 
-  const handlePageDown = (nodeId: string) => {
+  const handlePageNext = (nodeId: string) => {
     const { current, total } = getNodePageInfo(nodeId);
     if (current < total) {
-      setNodePage(nodeId, current); // current is 1-indexed, so current = next 0-indexed
+      setNodePage(nodeId, current);
     }
+  };
+
+  const handleDotClick = (nodeId: string, pageIndex: number) => {
+    setNodePage(nodeId, pageIndex);
   };
 
   const handleGenerateMore = (nodeId: string) => {
@@ -76,71 +97,120 @@ export default function GraphView() {
       <div className="graph-rows-wrapper">
         {rows.map(({ parentId, nodes }, depth) => {
           const pageInfo = parentId ? getNodePageInfo(parentId) : null;
-          const showPagination = parentId && pageInfo && pageInfo.hasChildren;
           const isFetching = parentId ? fetchingIds.has(parentId) : false;
-
-          // Debug logging
-          if (parentId) {
-            console.log(`Row ${depth}: parentId=${parentId}, pageInfo=`, pageInfo, `showPagination=${showPagination}`);
-          }
+          const isRoot = parentId === null;
+          const isDeepestRow = depth === rows.length - 1;
+          const parentTitle = parentId ? nodeMap[parentId]?.title : null;
 
           return (
             <div key={depth} className="graph-row-container">
-              <div className="graph-row">
-                {nodes.map((node) => {
-                  const isActive = activePath[depth] === node.id;
-                  const isSiblingActive = activePath[depth] !== undefined;
+              {/* Zone 1: Cards + optional right-side nav */}
+              <div className="graph-row-with-nav">
+                {/* Invisible spacer to balance nav on the right */}
+                {pageInfo?.hasMultiplePages && <div className="nav-balance-spacer" />}
+                <div className="graph-row">
+                  <AnimatePresence mode="popLayout">
+                    {nodes.map((node, i) => {
+                      const isActive = activePath[depth] === node.id;
+                      const isSiblingActive = activePath[depth] !== undefined;
 
-                  return (
-                    <NodeCard
-                      key={node.id}
-                      node={node}
-                      isActive={isActive}
-                      isSiblingActive={isSiblingActive}
-                      isLoading={fetchingIds.has(node.id)}
-                      onClick={() => selectNode(node.id, depth)}
-                    />
-                  );
-                })}
+                      return (
+                        <motion.div
+                          key={node.id}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -12 }}
+                          transition={{
+                            duration: 0.3,
+                            delay: i * 0.05,
+                            ease: [0.2, 0.8, 0.2, 1]
+                          }}
+                        >
+                          <NodeCard
+                            node={node}
+                            isActive={isActive}
+                            isSiblingActive={isSiblingActive}
+                            isLoading={fetchingIds.has(node.id)}
+                            onClick={() => selectNode(node.id, depth)}
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+
+                {/* Right-side arrows + dots — only when multiple pages */}
+                {pageInfo?.hasMultiplePages && (
+                  <motion.div
+                    className="row-nav-arrows"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                  >
+                    <button
+                      className="nav-arrow-btn"
+                      onClick={() => handlePagePrev(parentId!)}
+                      disabled={pageInfo.current <= 1}
+                      title="Previous page"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+
+                    <div className="nav-dots">
+                      {getVisibleDots(pageInfo.current - 1, pageInfo.total).map(({ index, size }) => (
+                        <button
+                          key={index}
+                          className={`nav-dot ${size}`}
+                          onClick={() => handleDotClick(parentId!, index)}
+                          title={`Page ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      className="nav-arrow-btn"
+                      onClick={() => handlePageNext(parentId!)}
+                      disabled={pageInfo.current >= pageInfo.total}
+                      title="Next page"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  </motion.div>
+                )}
               </div>
 
-              {/* Pagination Controls - only for non-root rows */}
-              {parentId && showPagination && (
-                <div className="row-pagination">
-                  {/* Up Arrow */}
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageUp(parentId)}
-                    disabled={pageInfo.current <= 1}
-                    title="Previous set"
-                  >
-                    <ChevronUp size={18} />
-                  </button>
-
-                  {/* Page Indicator */}
-                  <span className="pagination-indicator">
-                    {pageInfo.current}/{pageInfo.total}
-                  </span>
-
-                  {/* Down Arrow */}
-                  <button
-                    className="pagination-btn"
-                    onClick={() => handlePageDown(parentId)}
-                    disabled={pageInfo.current >= pageInfo.total}
-                    title="Next set"
-                  >
-                    <ChevronDown size={18} />
-                  </button>
-
-                  {/* Generate More Button */}
-                  <button
-                    className="pagination-btn generate-more-btn"
-                    onClick={() => handleGenerateMore(parentId)}
-                    disabled={isFetching || isLoading}
-                    title="Generate more topics"
-                  >
-                    <Plus size={18} />
-                  </button>
+              {/* Zone 2: Explore more — only on the deepest non-root row */}
+              {!isRoot && isDeepestRow && (
+                <div className="row-explore-more">
+                  <AnimatePresence mode="wait">
+                    {isFetching ? (
+                      <motion.div
+                        key="loading"
+                        className="explore-more-loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Loader2 size={16} className="spin" />
+                        <span>Generating...</span>
+                      </motion.div>
+                    ) : (
+                      <motion.button
+                        key="button"
+                        className="explore-more-btn"
+                        onClick={() => handleGenerateMore(parentId!)}
+                        disabled={isLoading}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Sparkles size={14} />
+                        <span>More under {parentTitle}</span>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
             </div>

@@ -1,4 +1,7 @@
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 interface MarkdownContentProps {
   content: string;
@@ -7,6 +10,8 @@ interface MarkdownContentProps {
 export function MarkdownContent({ content }: MarkdownContentProps) {
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={{
         // Style headers
         h1: ({ children }) => <h1 className="md-h1">{children}</h1>,

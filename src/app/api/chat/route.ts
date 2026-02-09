@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     // Build ancestry context string
     const ancestryContext = ancestryPath.length > 0
-      ? `\n\nIMPORTANT CONTEXT: This topic "${nodeTitle}" exists within a specific knowledge path: ${ancestryPath.join(' → ')} → ${nodeTitle}. Your response should be specifically about "${nodeTitle}" as it relates to this contextual chain, NOT general information about "${nodeTitle}" in isolation. For example, if discussing "Totalitarian Control" in the context of "World War 2 → Rise of Fascism → German Nazism", focus specifically on Nazi totalitarian control, not general totalitarianism.`
+      ? `\n\nIMPORTANT CONTEXT: This topic "${nodeTitle}" exists within a specific knowledge path: ${ancestryPath.join(' → ')} → ${nodeTitle}. Your response should be specifically about "${nodeTitle}" as it relates to this contextual chain, NOT general information about "${nodeTitle}" in isolation. For example, if discussing "Totalitarian Control" in the context of "World War 2 → Rise of Fascism → German Nazism", focus specifically on Nazi totalitarian control, not general totalitarianism. DO NOT reference or restate this context path in your response — the user already knows where they are.`
       : '';
 
     // Enhance the message with context for explore mode

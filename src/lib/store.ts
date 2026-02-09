@@ -25,7 +25,7 @@ interface StoreState {
   generateChildren: (parentNode: Node, silent?: boolean) => Promise<void>;
   generateMoreChildren: (nodeId: string) => Promise<void>;
   setNodePage: (nodeId: string, pageIndex: number) => void;
-  getNodePageInfo: (nodeId: string) => { current: number; total: number; hasChildren: boolean };
+  getNodePageInfo: (nodeId: string) => { current: number; total: number; hasChildren: boolean; hasMultiplePages: boolean };
 
   // CHAT ACTIONS
   toggleChat: () => void;
@@ -282,18 +282,18 @@ export const useGraphStore = create<StoreState>((set, get) => ({
   getNodePageInfo: (nodeId) => {
     const state = get();
     const node = state.nodeMap[nodeId];
-    if (!node) return { current: 1, total: 0, hasChildren: false };
+    if (!node) return { current: 1, total: 0, hasChildren: false, hasMultiplePages: false };
 
     const pages = node.childrenPages;
     const hasChildren = (node.childrenIds?.length ?? 0) > 0;
 
     // If no pages structure yet but has children, treat as 1 page
     if (!pages || pages.length === 0) {
-      return { current: 1, total: hasChildren ? 1 : 0, hasChildren };
+      return { current: 1, total: hasChildren ? 1 : 0, hasChildren, hasMultiplePages: false };
     }
 
     const current = state.nodePageIndex[nodeId] ?? 0;
-    return { current: current + 1, total: pages.length, hasChildren };
+    return { current: current + 1, total: pages.length, hasChildren, hasMultiplePages: pages.length > 1 };
   },
 
   getNodeChildren: (nodeId) => {
