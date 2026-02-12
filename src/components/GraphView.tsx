@@ -2,7 +2,7 @@
 
 import { useGraphStore, getRootNodes } from "@/lib/store";
 import { NodeCard } from "./NodeCard";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Node } from "@/types/graph";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from "lucide-react";
@@ -52,6 +52,8 @@ export default function GraphView() {
   } = useGraphStore();
 
   const [rows, setRows] = useState<RowData[]>([]);
+  const lastRowRef = useRef<HTMLDivElement>(null);
+  const prevRowCountRef = useRef(0);
 
   useEffect(() => {
     const newRows: RowData[] = [];
@@ -69,6 +71,21 @@ export default function GraphView() {
 
     setRows(newRows);
   }, [activePath, getVisibleChildren, nodeMap, nodePageIndex]);
+
+  // Auto-scroll: when a new row appears below the viewport, scroll it into view
+  useEffect(() => {
+    if (rows.length > prevRowCountRef.current && rows.length > 1) {
+      requestAnimationFrame(() => {
+        const el = lastRowRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+      });
+    }
+    prevRowCountRef.current = rows.length;
+  }, [rows.length]);
 
   const handlePagePrev = (nodeId: string) => {
     const { current } = getNodePageInfo(nodeId);
@@ -93,7 +110,7 @@ export default function GraphView() {
   };
 
   return (
-    <div className="graph-container">
+    <div className={`graph-container${rows.length > 1 ? ' has-depth' : ''}`}>
       <div className="graph-rows-wrapper">
         {rows.map(({ parentId, nodes }, depth) => {
           const pageInfo = parentId ? getNodePageInfo(parentId) : null;
@@ -103,81 +120,77 @@ export default function GraphView() {
           const parentTitle = parentId ? nodeMap[parentId]?.title : null;
 
           return (
-            <div key={depth} className="graph-row-container">
-              {/* Zone 1: Cards + optional right-side nav */}
-              <div className="graph-row-with-nav">
-                {/* Invisible spacer to balance nav on the right */}
-                {pageInfo?.hasMultiplePages && <div className="nav-balance-spacer" />}
-                <div className="graph-row">
-                  <AnimatePresence mode="popLayout">
-                    {nodes.map((node, i) => {
-                      const isActive = activePath[depth] === node.id;
-                      const isSiblingActive = activePath[depth] !== undefined;
+            <div key={depth} className="graph-row-container" ref={depth === rows.length - 1 ? lastRowRef : undefined}>
+              {/* Cards */}
+              <div className="graph-row">
+                <AnimatePresence mode="popLayout">
+                  {nodes.map((node, i) => {
+                    const isActive = activePath[depth] === node.id;
+                    const isSiblingActive = activePath[depth] !== undefined;
 
-                      return (
-                        <motion.div
-                          key={node.id}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -12 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: i * 0.05,
-                            ease: [0.2, 0.8, 0.2, 1]
-                          }}
-                        >
-                          <NodeCard
-                            node={node}
-                            isActive={isActive}
-                            isSiblingActive={isSiblingActive}
-                            isLoading={fetchingIds.has(node.id)}
-                            onClick={() => selectNode(node.id, depth)}
-                          />
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-
-                {/* Right-side arrows + dots — only when multiple pages */}
-                {pageInfo?.hasMultiplePages && (
-                  <motion.div
-                    className="row-nav-arrows"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    <button
-                      className="nav-arrow-btn"
-                      onClick={() => handlePagePrev(parentId!)}
-                      disabled={pageInfo.current <= 1}
-                      title="Previous page"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-
-                    <div className="nav-dots">
-                      {getVisibleDots(pageInfo.current - 1, pageInfo.total).map(({ index, size }) => (
-                        <button
-                          key={index}
-                          className={`nav-dot ${size}`}
-                          onClick={() => handleDotClick(parentId!, index)}
-                          title={`Page ${index + 1}`}
+                    return (
+                      <motion.div
+                        key={node.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: i * 0.05,
+                          ease: [0.2, 0.8, 0.2, 1]
+                        }}
+                      >
+                        <NodeCard
+                          node={node}
+                          isActive={isActive}
+                          isSiblingActive={isSiblingActive}
+                          isLoading={fetchingIds.has(node.id)}
+                          onClick={() => selectNode(node.id, depth)}
                         />
-                      ))}
-                    </div>
-
-                    <button
-                      className="nav-arrow-btn"
-                      onClick={() => handlePageNext(parentId!)}
-                      disabled={pageInfo.current >= pageInfo.total}
-                      title="Next page"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                  </motion.div>
-                )}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
+
+              {/* Arrows + dots — centered below cards, only when multiple pages */}
+              {pageInfo?.hasMultiplePages && (
+                <motion.div
+                  className="row-nav-arrows"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <button
+                    className="nav-arrow-btn"
+                    onClick={() => handlePagePrev(parentId!)}
+                    disabled={pageInfo.current <= 1}
+                    title="Previous page"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  <div className="nav-dots">
+                    {getVisibleDots(pageInfo.current - 1, pageInfo.total).map(({ index, size }) => (
+                      <button
+                        key={index}
+                        className={`nav-dot ${size}`}
+                        onClick={() => handleDotClick(parentId!, index)}
+                        title={`Page ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    className="nav-arrow-btn"
+                    onClick={() => handlePageNext(parentId!)}
+                    disabled={pageInfo.current >= pageInfo.total}
+                    title="Next page"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </motion.div>
+              )}
 
               {/* Zone 2: Explore more — only on the deepest non-root row */}
               {!isRoot && isDeepestRow && (
@@ -207,7 +220,7 @@ export default function GraphView() {
                         transition={{ duration: 0.2 }}
                       >
                         <Sparkles size={14} />
-                        <span>More under {parentTitle}</span>
+                        <span>More under <strong>{parentTitle}</strong></span>
                       </motion.button>
                     )}
                   </AnimatePresence>

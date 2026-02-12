@@ -3,8 +3,8 @@
 /* --- NODE CARD BASE --- */
 .node-card {
   position: relative;
-  width: 14rem;
-  height: 7.5rem;
+  width: 15rem;
+  height: 8rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -31,14 +31,13 @@
   line-height: 1.2;
   margin-bottom: 0.2rem;
   pointer-events: none;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  width: 100%;
 }
 
 .node-card p {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 500;
   opacity: 0.9;
   line-height: 1.4;
@@ -85,6 +84,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
   transition: transform 0.2s ease-out;
 }
 

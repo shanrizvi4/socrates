@@ -10,10 +10,14 @@
   min-height: 100vh;
 }
 
+.graph-container.has-depth {
+  padding-bottom: 40vh;
+}
+
 .graph-rows-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 2.5rem;
   width: 100%;
 }
 
@@ -22,7 +26,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.1rem;
+  gap: 1.5rem;
 
   /* Stacking Context Base */
   position: relative;
@@ -43,58 +47,42 @@
   }
 }
 
-/* 3. Row Container — stacks cards+nav above explore-more */
+/* 3. Row Container — stacks cards, nav, and explore-more vertically */
 .graph-row-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
   width: 100%;
+  scroll-margin-bottom: 2rem;
 }
 
-/* 4. Horizontal wrapper: cards + right-side nav arrows/dots
-   Spacer on left balances nav on right, keeping cards centered. */
-.graph-row-with-nav {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.5rem;
-  width: 100%;
-}
-
-/* Invisible spacer — mirrors nav width to keep cards centered */
-.nav-balance-spacer {
-  width: 70px;
-  flex-shrink: 0;
-}
-
-/* 5. Right-side navigation (arrows + dots) */
+/* 4. Navigation (arrows + dots) — centered below cards */
 .row-nav-arrows {
-  width: 70px;
-  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .nav-arrow-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: rgba(222, 205, 179, 0.12);
-  border: 1px solid rgba(222, 205, 179, 0.3);
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: none;
   border-radius: 50%;
-  color: rgba(222, 205, 179, 0.85);
+  padding: 0;
+  color: rgba(222, 205, 179, 0.9);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .nav-arrow-btn:hover:not(:disabled) {
-  background: rgba(222, 205, 179, 0.25);
-  border-color: rgba(222, 205, 179, 0.5);
+  color: rgba(222, 205, 179, 1);
+  background: rgba(222, 205, 179, 0.15);
 }
 
 .nav-arrow-btn:disabled {
@@ -102,13 +90,12 @@
   cursor: default;
 }
 
-/* 6. Dot indicators — vertical stack */
+/* 5. Dot indicators — horizontal row */
 .nav-dots {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 0 0.25rem;
+  gap: 8px;
+  padding: 0 0.35rem;
 }
 
 .nav-dot {
@@ -137,11 +124,11 @@
   opacity: 0.5;
 }
 
-/* 7. Explore More button — centered below cards */
+/* 6. Explore More button — centered below nav */
 .row-explore-more {
   display: flex;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
 }
 
 .explore-more-btn {
@@ -160,9 +147,9 @@
 }
 
 .explore-more-btn:hover:not(:disabled) {
-  background: rgba(222, 205, 179, 0.1);
-  border-color: rgba(222, 205, 179, 0.5);
-  color: rgba(222, 205, 179, 1);
+  background: rgba(222, 205, 179, 0.85);
+  border-color: rgba(222, 205, 179, 0.85);
+  color: #58604B;
 }
 
 .explore-more-btn:disabled {
@@ -170,7 +157,7 @@
   cursor: default;
 }
 
-/* 8. Loading state for explore-more */
+/* 7. Loading state for explore-more */
 .explore-more-loading {
   display: flex;
   align-items: center;

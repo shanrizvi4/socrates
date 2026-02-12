@@ -1,7 +1,7 @@
 import { Node } from "@/types/graph";
 import { motion } from "framer-motion"; 
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGraphStore } from "@/lib/store";
 import "../styles/popups.css";
 
@@ -19,32 +19,36 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
   const questions = node.popup_data?.questions || [];
   
   const [mounted, setMounted] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
   useEffect(() => setMounted(true), []);
+
+  // After render, measure actual popup height and clamp for left/right positions
+  useLayoutEffect(() => {
+    const el = popupRef.current;
+    if (!el || !anchorRect || (position !== 'left' && position !== 'right')) return;
+
+    const popupHeight = el.offsetHeight;
+    const viewportHeight = window.innerHeight;
+    const margin = 20;
+
+    // Center popup vertically on the card, then clamp to viewport
+    let top = anchorRect.top + (anchorRect.height / 2) - (popupHeight / 2);
+    top = Math.max(margin, Math.min(top, viewportHeight - popupHeight - margin));
+
+    el.style.top = `${top}px`;
+  });
 
   if (!mounted || !anchorRect) return null;
 
   // --- LAYOUT LOGIC ---
   const getLayoutStyles = () => {
-    const gap = 15; 
-    const margin = 20; 
-    const viewportHeight = window.innerHeight;
-    const EST_HEIGHT = 550; 
+    const gap = 15;
+    const margin = 20;
 
     const styles: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 99999, 
+      zIndex: 99999,
       pointerEvents: 'auto',
-    };
-
-    const getSideTop = () => {
-      let top = anchorRect.top;
-      if (top + EST_HEIGHT > viewportHeight - margin) {
-        top = viewportHeight - EST_HEIGHT - margin;
-      }
-      if (top < margin) {
-        top = margin;
-      }
-      return top;
     };
 
     switch (position) {
@@ -57,11 +61,11 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
         styles.left = anchorRect.left + (anchorRect.width / 2);
         break;
       case 'left':
-        styles.top = getSideTop();
+        styles.top = anchorRect.top; // initial; adjusted by useLayoutEffect
         styles.left = anchorRect.left - gap;
         break;
       case 'right':
-        styles.top = getSideTop();
+        styles.top = anchorRect.top; // initial; adjusted by useLayoutEffect
         styles.left = anchorRect.right + gap;
         break;
     }
@@ -92,8 +96,9 @@ export function HoverCard({ node, position, anchorRect }: HoverCardProps) {
   };
 
   return createPortal(
-    <motion.div 
-      className="hover-card" 
+    <motion.div
+      ref={popupRef}
+      className="hover-card"
       variants={sidebarVariants}
       initial="hidden"
       animate="visible"

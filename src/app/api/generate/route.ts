@@ -43,8 +43,8 @@ Generate 5 NEW, distinct sub-topics (Children) for the current node.
 - **Mutually Exclusive:** The new nodes must not overlap with each other.
 
 ### 2. LENGTH & STYLE CONSTRAINTS
-- **TITLES:** Max 20 characters (including spaces). Keep to 2-3 punchy words. This is a hard limit — titles MUST fit in 20 characters.
-- **HOOKS:** Max 50 characters (including spaces). Explain *what* it is in active voice. This is a hard limit.
+- **TITLES:** Max 15 characters (including spaces). Keep to 2-3 punchy words. This is a hard limit — titles MUST fit in 20 characters.
+- **HOOKS:** Max 60 characters (including spaces). Explain *what* it is in active voice. This is a hard limit.
 
 ### 3. POPUP CONTENT (The "Smart Student" Protocol)
 - **DESCRIPTION:** A detailed summary (40-60 words). Contextualize *why* this sub-topic is important within the given ancestral context.
@@ -90,7 +90,14 @@ OUTPUT FORMAT (JSON ONLY):
       ${ancestryContext ? `\nCONTEXTUAL CHAIN: ${ancestryContext}` : ''}
 
       SCOPE: "${definition}"
-      EXCLUDE: "${allExclusions}"
+      EXCLUDE: "${exclusion}"
+
+      ${excludeTitles.length > 0 ? `
+ABSOLUTELY DO NOT REPEAT ANY OF THESE EXISTING TOPICS (this is critical — every title you generate must be completely different from ALL of these):
+${excludeTitles.map((t: string, i: number) => `  ${i + 1}. "${t}"`).join('\n')}
+
+Generate 5 topics that explore DIFFERENT aspects of "${parentNode.title}" than the ones listed above.
+      ` : ''}
 
       CRITICAL: The children you generate must be specifically about "${parentNode.title}" AS IT RELATES TO the contextual chain above.
       ${ancestryPath.length > 0 ? `For example, if the chain is "World War 2 → Rise of Fascism → German Nazism → Totalitarian Control", generate children about totalitarian control SPECIFICALLY in Nazi Germany during WW2, not general totalitarian control concepts.` : ''}
@@ -98,16 +105,44 @@ OUTPUT FORMAT (JSON ONLY):
       Generate 5 NEW and DIFFERENT Children.
     `;
 
-    const result = await model.generateContent(userPrompt);
-    const response = await result.response;
-    const text = response.text();
+    // Normalize a title for comparison (lowercase, trimmed)
+    const normalize = (t: string) => t.toLowerCase().trim();
+    const existingSet = new Set((excludeTitles || []).map((t: string) => normalize(t)));
 
-    if (!text) throw new Error("No content generated");
+    // Try up to 2 times to get non-duplicate results
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await model.generateContent(userPrompt);
+      const response = await result.response;
+      const text = response.text();
 
-    const cleanedText = text.replace(/```json|```/g, '').trim();
-    const data = JSON.parse(cleanedText);
+      if (!text) throw new Error("No content generated");
 
-    return NextResponse.json(data);
+      const cleanedText = text.replace(/```json|```/g, '').trim();
+      const data = JSON.parse(cleanedText);
+
+      if (!data.children || data.children.length === 0) {
+        throw new Error("No children in response");
+      }
+
+      // Filter out any duplicates of existing titles
+      const unique = data.children.filter((child: any) =>
+        !existingSet.has(normalize(child.title))
+      );
+
+      const dupeCount = data.children.length - unique.length;
+
+      // Zero duplicates, or last attempt — return what we have (filtered)
+      if (dupeCount === 0 || attempt === 1) {
+        console.log(`Attempt ${attempt + 1}: ${unique.length}/${data.children.length} unique (${dupeCount} duplicates filtered)`);
+        return NextResponse.json({ children: unique });
+      }
+
+      // Any duplicates at all — retry
+      console.log(`Attempt ${attempt + 1}: ${dupeCount} duplicates found, retrying...`);
+    }
+
+    // Shouldn't reach here, but fallback
+    return NextResponse.json({ children: [] });
 
   } catch (error: any) {
     console.error('❌ Generation error:', error);
