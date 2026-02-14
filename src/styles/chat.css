@@ -169,12 +169,11 @@
 }
 
 .input-wrapper:focus-within {
-  background-color: rgba(255, 255, 255, 0.38);
   /* border-color: rgba(88, 96, 75, 0.4); */
-  box-shadow: 
-    0 10px 15px -3px rgba(88, 96, 75, 0.1), 
-    0 4px 6px -2px rgba(88, 96, 75, 0.05); 
-  transform: translateY(-2px); 
+  box-shadow:
+    0 10px 15px -3px rgba(88, 96, 75, 0.1),
+    0 4px 6px -2px rgba(88, 96, 75, 0.05);
+  transform: translateY(-2px);
 }
 
 .chat-input {
@@ -218,12 +217,10 @@
 
 .chat-send-btn:not(:disabled) {
   opacity: 1;
-  background-color: rgba(88, 96, 75, 0.1);
 }
 
 .chat-send-btn:not(:disabled):hover {
-  background-color: #58604B;
-  color: #DECDB3; 
+  color: #2a3a4a;
   transform: translateY(-50%) scale(1.1);
 }
 
@@ -250,14 +247,15 @@
   font-size: 0.85rem;
   color: #58604B;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.4s ease;
   text-align: left;
   line-height: 1.4;
 }
 
 .suggested-question-btn:hover:not(:disabled) {
-  background-color: rgba(88, 96, 75, 0.15);
+  background-color: rgba(88, 96, 75, 0.12);
   border-color: rgba(88, 96, 75, 0.3);
+  color: #2a3a4a;
   transform: translateY(-1px);
 }
 

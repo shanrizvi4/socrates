@@ -21,7 +21,9 @@ export default function Page() {
         `}
       >
         <div className="w-full h-full overflow-auto scroll-smooth">
-          <GraphView />
+          <div style={{ opacity: isChatOpen ? 0.6 : 1, transition: 'opacity 0.3s ease' }}>
+            <GraphView />
+          </div>
         </div>
       </div>
     </div>

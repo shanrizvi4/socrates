@@ -5,7 +5,7 @@ import { NodeCard } from "./NodeCard";
 import { useEffect, useState, useRef } from "react";
 import { Node } from "@/types/graph";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, Loader2 } from "lucide-react";
 
 interface RowData {
   parentId: string | null;
@@ -219,7 +219,7 @@ export default function GraphView() {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Sparkles size={14} />
+                        <Compass size={14} />
                         <span>More under <strong>{parentTitle}</strong></span>
                       </motion.button>
                     )}
@@ -230,6 +230,8 @@ export default function GraphView() {
           );
         })}
       </div>
+
+
     </div>
   );
 }

@@ -63,6 +63,13 @@
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
+  margin-top: -0.25rem; /* pull closer to the cards it belongs to */
+}
+
+/* When nav is the last element in its row (no explore-more below),
+   tuck it into the inter-row gap so card-to-card spacing stays even */
+.row-nav-arrows:last-child {
+  margin-bottom: -1.75rem;
 }
 
 .nav-arrow-btn {
@@ -77,7 +84,7 @@
   padding: 0;
   color: rgba(222, 205, 179, 0.9);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.4s ease;
 }
 
 .nav-arrow-btn:hover:not(:disabled) {
@@ -139,11 +146,11 @@
   font-family: 'Charter', serif;
   font-size: 0.85rem;
   color: rgba(222, 205, 179, 0.85);
-  background: transparent;
+  background-color: rgba(222, 205, 179, 0.07);
   border: 1px solid rgba(222, 205, 179, 0.3);
   border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.4s ease;
 }
 
 .explore-more-btn:hover:not(:disabled) {

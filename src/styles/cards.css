@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 1.25rem;
+  padding: .9rem;
   
   /* Visuals */
   background-color: #DECDB3;
@@ -120,8 +120,9 @@
   transition:
     opacity 0.2s ease-out,
     visibility 0.2s ease-out,
-    background-color 0.15s ease,
-    border-color 0.15s ease,
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.4s ease,
     transform 0.2s ease-out;
 }
 

@@ -19,7 +19,7 @@
 
 /* --- HEADER --- */
 .hover-card__header {
-  padding: 1.5rem 1.5rem 1rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(88, 96, 75, 0.15); 
 }
 
@@ -55,7 +55,7 @@
   gap: 1rem;
   
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.4s ease;
 }
 
 .hover-card__question-btn:last-child {
@@ -63,7 +63,11 @@
 }
 
 .hover-card__question-btn:hover {
-  background-color: rgba(88, 96, 75, 0.1); 
+  background-color: rgba(88, 96, 75, 0.12);
+}
+
+.hover-card__question-btn:hover .question-text {
+  color: #2a3a4a;
 }
 
 .question-text {
@@ -73,12 +77,13 @@
   color: #46576B;
   line-height: 1.4;
   flex: 1;
+  transition: color 0.4s ease;
 }
 
 .question-arrow {
   color: #46576B;
   opacity: 0.5;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   margin-top: 2px;
   flex-shrink: 0;
 }
